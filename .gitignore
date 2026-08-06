@@ -1,6 +1,7 @@
 node_modules/
 .DS_Store
 *.log
+Backup/
 data/*.db-shm
 data/*.db-wal
 data/*.restore_tmp
