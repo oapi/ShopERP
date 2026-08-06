@@ -64,31 +64,18 @@
 
 ---
 
-## ⚙️ Installation & Setup
+## 💾 USB Pendrive Portable Execution (Plug & Play on Windows)
 
-### Prerequisites
-- **Node.js**: v22.5.0 or higher (required for native `node:sqlite` support).
+This application is **100% portable and self-contained**. It includes a bundled Node.js runtime (`bin/node.exe`) and SQLite database engine (`data/shop.db`). **No installation or setup is required on target Windows PCs.**
 
-### Installation Steps
+### How to Run from a Pendrive:
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/oapi/ShopERP.git
-   cd ShopERP
-   ```
-
-2. **Start the Application**:
-   ```bash
-   npm start
-   # Or directly:
-   node server.js
-   ```
-
-3. **Access the System**:
-   Open your web browser and navigate to:
-   ```text
-   http://localhost:3000
-   ```
+1. **Copy Folder to Pendrive**: Copy this entire folder (`steel_n_stone_erp` or `CoreTradeERP`) onto your USB Pendrive.
+2. **Plug into any Windows PC**: Insert the USB drive into any Windows PC (Drive D:, E:, F:, G:, etc.).
+3. **Double-Click to Launch**:
+   - Double-click **`Start-CoreTrade-ERP.bat`** (or `Start-Silent.vbs` for background mode).
+4. **Automated Browser Launch**: The system will automatically start the backend server and open your default browser to `http://localhost:3000`.
+5. **To Stop**: Double-click **`Stop-CoreTrade-ERP.bat`**.
 
 ---
 

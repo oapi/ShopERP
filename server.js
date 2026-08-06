@@ -1413,9 +1413,28 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log('');
-  console.log('  ✔ CoreTrade ERP — Islam Enterprise (Quality Materials, Lasting Trust) running');
-  console.log(`  → Open http://localhost:${PORT} in your browser`);
-  console.log('');
-});
+function startServer(portToTry) {
+  server.removeAllListeners('error');
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.log(`  ⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
+      startServer(portToTry + 1);
+    } else {
+      console.error('Server error:', e);
+    }
+  });
+
+  server.listen(portToTry, () => {
+    console.log('=================================================================');
+    console.log('  ✔ CoreTrade ERP — Islam Enterprise');
+    console.log('  ✔ Quality Materials, Lasting Trust');
+    console.log('-----------------------------------------------------------------');
+    console.log(`  🚀 Portable System Ready!`);
+    console.log(`  🌐 Web Address: http://localhost:${portToTry}`);
+    console.log(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
+    console.log('=================================================================');
+  });
+}
+
+startServer(PORT);
+

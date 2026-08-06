@@ -1,7 +1,10 @@
 node_modules/
 .DS_Store
 *.log
-android/
+bin/
 data/*.db-shm
 data/*.db-wal
 data/*.restore_tmp
+Start-CoreTrade-ERP.bat
+Start-Silent.vbs
+Stop-CoreTrade-ERP.bat

@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.islamenterprise.shoperp.ui.pos.PosViewModel

@@ -25,6 +25,52 @@
     posNote: '',
   };
 
+  const VALID_VIEWS = ['dashboard', 'pos', 'sales', 'purchases', 'products', 'customers', 'suppliers', 'expenses', 'accounts', 'reports'];
+
+  function savePOSState() {
+    try {
+      const data = {
+        posCart: state.posCart,
+        posCustomer: state.posCustomer,
+        posSaleType: state.posSaleType,
+        posDiscount: state.posDiscount,
+        posPaid: state.posPaid,
+        posAccount: state.posAccount,
+        posNote: state.posNote,
+      };
+      localStorage.setItem('ie_pos_state', JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function loadPOSState() {
+    try {
+      const saved = localStorage.getItem('ie_pos_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.posCart)) state.posCart = parsed.posCart;
+        if (parsed.posCustomer) state.posCustomer = parsed.posCustomer;
+        if (parsed.posSaleType) state.posSaleType = parsed.posSaleType;
+        if (typeof parsed.posDiscount === 'number') state.posDiscount = parsed.posDiscount;
+        if (typeof parsed.posPaid === 'number') state.posPaid = parsed.posPaid;
+        if (parsed.posAccount) state.posAccount = parsed.posAccount;
+        if (typeof parsed.posNote === 'string') state.posNote = parsed.posNote;
+      }
+    } catch (e) {}
+  }
+
+  function clearPOSState() {
+    state.posCart = [];
+    state.posCustomer = null;
+    state.posSaleType = 'retail';
+    state.posDiscount = 0;
+    state.posPaid = 0;
+    state.posAccount = null;
+    state.posNote = '';
+    try {
+      localStorage.removeItem('ie_pos_state');
+    } catch (e) {}
+  }
+
   // Helper Utilities
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const $$ = (selector, parent = document) => Array.from(parent.querySelectorAll(selector));
@@ -431,6 +477,8 @@
     state.token = '';
     state.user = null;
     localStorage.removeItem('ie_token');
+    localStorage.removeItem('ie_current_view');
+    clearPOSState();
     renderUserTopbar();
     showLoginScreen();
   }
@@ -444,6 +492,13 @@
       if (!btn) return;
       const view = btn.dataset.view;
       if (view) switchView(view);
+    });
+
+    window.addEventListener('hashchange', () => {
+      const hashView = window.location.hash.replace(/^#/, '');
+      if (hashView && VALID_VIEWS.includes(hashView) && hashView !== state.currentView) {
+        switchView(hashView, {}, true);
+      }
     });
 
     const loginForm = $('#login-form');
@@ -463,7 +518,12 @@
           hideLoginScreen();
           renderUserTopbar();
           showToast('Welcome back, ' + res.user.name + '!', 'success');
-          switchView('dashboard');
+
+          const hashView = window.location.hash.replace(/^#/, '');
+          const initialView = (hashView && VALID_VIEWS.includes(hashView))
+            ? hashView
+            : (localStorage.getItem('ie_current_view') || 'dashboard');
+          switchView(initialView);
         } catch (err) {
           // Toast handled by api()
         }
@@ -471,16 +531,27 @@
     }
   }
 
-  function switchView(viewName, params = {}) {
+  function switchView(viewName, params = {}, skipHashUpdate = false) {
     if (!state.user) {
       showLoginScreen();
       return;
     }
-    state.currentView = viewName;
+    const targetView = VALID_VIEWS.includes(viewName) ? viewName : 'dashboard';
+    state.currentView = targetView;
+    try {
+      localStorage.setItem('ie_current_view', targetView);
+    } catch (e) {}
+
+    if (!skipHashUpdate) {
+      if (window.location.hash !== '#' + targetView) {
+        window.location.hash = '#' + targetView;
+      }
+    }
+
     $$('.nav-btn').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.view === viewName);
+      btn.classList.toggle('active', btn.dataset.view === targetView);
     });
-    renderView(viewName, params);
+    renderView(targetView, params);
   }
 
   async function renderView(viewName, params = {}) {
@@ -759,7 +830,7 @@
             '<div class="field">' +
               '<label>Deposit Payment To Account</label>' +
               '<select id="pos-account-select">' +
-                accounts.map(a => '<option value="' + a.id + '">' + a.name + ' (' + a.type + ') — Bal: ৳' + a.current_balance + '</option>').join('') +
+                accounts.map(a => '<option value="' + a.id + '" ' + (state.posAccount === a.id ? 'selected' : '') + '>' + a.name + ' (' + a.type + ') — Bal: ৳' + a.current_balance + '</option>').join('') +
               '</select>' +
             '</div>' +
 
@@ -840,6 +911,7 @@
           const newQty = Math.max(0.01, Number(e.target.value) || 1);
           state.posCart[idx].qty = newQty;
           updatePOSCartUI();
+          savePOSState();
         };
       });
       $$('.pos-cart-price').forEach(inp => {
@@ -848,6 +920,7 @@
           const newPrice = Math.max(0, Number(e.target.value) || 0);
           state.posCart[idx].unit_price = newPrice;
           updatePOSCartUI();
+          savePOSState();
         };
       });
       $$('.btn-pos-remove').forEach(btn => {
@@ -855,6 +928,7 @@
           const idx = Number(btn.dataset.idx);
           state.posCart.splice(idx, 1);
           updatePOSCartUI();
+          savePOSState();
         };
       });
     }
@@ -886,6 +960,7 @@
           });
         }
         updatePOSCartUI();
+        savePOSState();
         $('#pos-product-select').value = '';
       };
     }
@@ -901,6 +976,7 @@
           }
         });
         updatePOSCartUI();
+        savePOSState();
       };
     }
 
@@ -919,6 +995,16 @@
           });
         }
         updatePOSCartUI();
+        savePOSState();
+      };
+    }
+
+    const accSel = $('#pos-account-select');
+    if (accSel) {
+      accSel.onchange = (e) => {
+        const id = Number(e.target.value);
+        state.posAccount = id || null;
+        savePOSState();
       };
     }
 
@@ -929,25 +1015,42 @@
           const freshCusts = await api('/api/customers');
           state.customers = freshCusts;
           state.posCustomer = newCust;
+          savePOSState();
           renderPOS(container);
         });
       };
     }
 
     const discInp = $('#pos-discount');
-    if (discInp) discInp.oninput = updatePOSCartUI;
+    if (discInp) {
+      discInp.oninput = (e) => {
+        state.posDiscount = Math.max(0, Number(e.target.value) || 0);
+        updatePOSCartUI();
+        savePOSState();
+      };
+    }
 
     const paidInp = $('#pos-paid');
-    if (paidInp) paidInp.oninput = updatePOSCartUI;
+    if (paidInp) {
+      paidInp.oninput = (e) => {
+        state.posPaid = Math.max(0, Number(e.target.value) || 0);
+        updatePOSCartUI();
+        savePOSState();
+      };
+    }
+
+    const noteInp = $('#pos-note');
+    if (noteInp) {
+      noteInp.oninput = (e) => {
+        state.posNote = e.target.value;
+        savePOSState();
+      };
+    }
 
     const resetBtn = $('#btn-pos-reset');
     if (resetBtn) {
       resetBtn.onclick = () => {
-        state.posCart = [];
-        state.posCustomer = null;
-        state.posDiscount = 0;
-        state.posPaid = 0;
-        state.posNote = '';
+        clearPOSState();
         renderPOS(container);
       };
     }
@@ -993,11 +1096,7 @@
         try {
           const sale = await api('/api/sales', { method: 'POST', body: JSON.stringify(payload) });
           showToast('Invoice ' + sale.invoice_no + ' created successfully!', 'success');
-          state.posCart = [];
-          state.posCustomer = null;
-          state.posDiscount = 0;
-          state.posPaid = 0;
-          state.posNote = '';
+          clearPOSState();
 
           printInvoice(sale);
           renderPOS(container);
@@ -2572,9 +2671,18 @@
   async function initApp() {
     initClock();
     initRouter();
+    loadPOSState();
     const authenticated = await checkAuth();
     if (authenticated) {
-      switchView('dashboard');
+      const hashView = window.location.hash.replace(/^#/, '');
+      const storedView = localStorage.getItem('ie_current_view');
+      let initialView = 'dashboard';
+      if (hashView && VALID_VIEWS.includes(hashView)) {
+        initialView = hashView;
+      } else if (storedView && VALID_VIEWS.includes(storedView)) {
+        initialView = storedView;
+      }
+      switchView(initialView);
     }
   }
 
