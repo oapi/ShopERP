@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Islam Enterprise — Trustable Rod &amp; Cement Supplier</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <div class="layout" id="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🏗️</div>
+        <div>
+          <div class="brand-name">Islam Enterprise</div>
+          <div class="brand-sub">Trustable Rod &amp; Cement</div>
+        </div>
+      </div>
+      <nav id="nav">
+        <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-view="pos">🧾 New Sale</button>
+        <button class="nav-btn" data-view="sales">📑 Sales</button>
+        <button class="nav-btn" data-view="purchases">🚚 Purchases</button>
+        <button class="nav-btn" data-view="products">📦 Inventory</button>
+        <button class="nav-btn" data-view="customers">👥 Customers</button>
+        <button class="nav-btn" data-view="suppliers">🏭 Suppliers</button>
+        <button class="nav-btn" data-view="expenses">💸 Expenses</button>
+        <button class="nav-btn" data-view="accounts">🏦 Accounts &amp; Cash</button>
+        <button class="nav-btn" data-view="reports">📈 Reports</button>
+      </nav>
+      <div class="sidebar-footer" id="clock"></div>
+    </aside>
+    <div class="main-wrapper">
+      <header class="topbar" id="topbar">
+        <div class="topbar-title">Islam Enterprise ERP</div>
+        <div class="topbar-user" id="user-info-bar">
+          <!-- Rendered dynamically -->
+        </div>
+      </header>
+      <main class="main" id="main"></main>
+    </div>
+  </div>
+
+  <!-- Login Screen Overlay -->
+  <div class="login-backdrop" id="login-backdrop" hidden>
+    <div class="login-card">
+      <div class="login-brand">
+        <div style="font-size: 36px; margin-bottom: 6px;">🏗️</div>
+        <h2>Islam Enterprise</h2>
+        <div style="color: var(--muted); font-size: 13px;">Trustable Rod &amp; Cement Supplier</div>
+      </div>
+      <form id="login-form" style="margin-top: 20px;">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="login-username" placeholder="e.g. admin or sales" required autofocus>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn lg" style="width: 100%; margin-top: 10px;">
+          🔑 Sign In
+        </button>
+      </form>
+      <!--<div class="login-hints">
+      <strong>Default Logins:</strong>
+      <div style="margin-top: 4px;">• Admin: <code>admin</code> / <code>admin123</code> (Full access)</div>
+      <div>• Sales Manager: <code>sales</code> / <code>sales123</code> (Operations only)</div>
+    </div>-->
+    </div>
+  </div>
+
+  <!-- Modal container -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <!-- Print area (invoice) -->
+  <div id="print-area"></div>
+
+  <div id="toast-wrap"></div>
+
+  <script src="/app.js"></script>
+</body>
+
+</html>

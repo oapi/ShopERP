@@ -1,0 +1,13 @@
+{
+  "name": "rod-cement-shop",
+  "version": "1.0.0",
+  "description": "Management system for Islam Enterprise - A Trustable Rod & Cement Supplier",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
