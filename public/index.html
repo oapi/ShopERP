@@ -3,20 +3,30 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="theme-color" content="#1e3a8a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Islam Enterprise — CoreTrade ERP</title>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/png" href="/islamEnterprise_logo.png">
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
   <div class="layout" id="app-layout">
-    <aside class="sidebar">
+    <!-- Sidebar Backdrop Overlay for Mobile Drawer -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Sidebar Drawer (Mobile & Desktop) -->
+    <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <div class="brand-icon">🏗️</div>
-        <div>
+        <div class="brand-logo-wrap">
+          <img src="/islamEnterprise_logo.png" alt="Islam Enterprise Logo" class="brand-logo-img">
+        </div>
+        <div class="brand-details">
           <div class="brand-name">Islam Enterprise</div>
           <div class="brand-sub">Quality Materials, Lasting Trust</div>
         </div>
+        <button class="sidebar-close" id="btn-sidebar-close" aria-label="Close sidebar">&times;</button>
       </div>
       <nav id="nav">
         <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
@@ -34,7 +44,15 @@
     </aside>
     <div class="main-wrapper">
       <header class="topbar" id="topbar">
-        <div class="topbar-title">CoreTrade ERP</div>
+        <div class="topbar-left">
+          <button class="menu-toggle" id="btn-menu-toggle" aria-label="Toggle navigation">
+            <span>☰</span>
+          </button>
+          <div class="topbar-logo-wrap">
+            <img src="/islamEnterprise_logo.png" alt="Islam Enterprise" class="topbar-logo-img">
+          </div>
+          <div class="topbar-title">CoreTrade ERP</div>
+        </div>
         <div class="topbar-user" id="user-info-bar">
           <!-- Rendered dynamically -->
         </div>
@@ -47,7 +65,9 @@
   <div class="login-backdrop" id="login-backdrop" hidden>
     <div class="login-card">
       <div class="login-brand">
-        <div style="font-size: 36px; margin-bottom: 6px;">🏗️</div>
+        <div class="login-logo-wrap">
+          <img src="/islamEnterprise_logo.png" alt="Islam Enterprise Logo" class="login-logo-img">
+        </div>
         <h2>Islam Enterprise</h2>
         <div style="color: var(--muted); font-size: 13px;">Quality Materials, Lasting Trust</div>
       </div>

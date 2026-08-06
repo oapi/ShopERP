@@ -483,8 +483,35 @@
     showLoginScreen();
   }
 
+  // Mobile Sidebar Drawer Controller
+  function initMobileSidebar() {
+    const menuToggle = $('#btn-menu-toggle');
+    const sidebar = $('#sidebar');
+    const backdrop = $('#sidebar-backdrop');
+    const sidebarClose = $('#btn-sidebar-close');
+
+    const openSidebar = () => {
+      if (sidebar) sidebar.classList.add('active');
+      if (backdrop) backdrop.classList.add('active');
+    };
+
+    const closeSidebar = () => {
+      if (sidebar) sidebar.classList.remove('active');
+      if (backdrop) backdrop.classList.remove('active');
+    };
+
+    if (menuToggle) menuToggle.onclick = openSidebar;
+    if (sidebarClose) sidebarClose.onclick = closeSidebar;
+    if (backdrop) backdrop.onclick = closeSidebar;
+
+    $$('#nav .nav-btn').forEach((btn) => {
+      btn.addEventListener('click', closeSidebar);
+    });
+  }
+
   // Router & Navigation
   function initRouter() {
+    initMobileSidebar();
     const nav = $('#nav');
     if (!nav) return;
     nav.addEventListener('click', (e) => {
@@ -1216,9 +1243,26 @@
 
     const bodyHtml =
       '<div style="font-size: 13px;">' +
-        '<div style="display:flex; justify-content:space-between; margin-bottom:12px;">' +
-          '<div><strong>Invoice:</strong> ' + sale.invoice_no + '<br><strong>Customer:</strong> ' + sale.customer_name + '<br><strong>Sale Type:</strong> ' + sale.sale_type + '</div>' +
-          '<div style="text-align:right;"><strong>Date:</strong> ' + sale.date + '<br><strong>Status:</strong> ' + (sale.total - sale.paid <= 0 ? 'Paid' : 'Due: ' + fmtTk(sale.total - sale.paid)) + '</div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:14px;">' +
+          '<div style="display:flex; align-items:center; gap:12px;">' +
+            '<div style="background:#fff; padding:4px 8px; border-radius:6px; border:1px solid var(--border); shadow:var(--shadow-sm);">' +
+              '<img src="/islamEnterprise_logo.png" alt="Islam Enterprise Logo" style="height:36px; width:auto; object-fit:contain; display:block;">' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:15px; font-weight:700;">ISLAM ENTERPRISE</div>' +
+              '<div style="font-size:11px; color:var(--muted);">Quality Materials, Lasting Trust</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:15px; font-weight:bold; color:var(--primary);">INVOICE</div>' +
+            '<div><strong>Inv:</strong> ' + sale.invoice_no + '</div>' +
+            '<div><strong>Date:</strong> ' + sale.date + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div style="margin-bottom:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">' +
+          '<div><strong>Customer:</strong> ' + sale.customer_name + ' | <strong>Type:</strong> ' + sale.sale_type.toUpperCase() + '</div>' +
+          '<div><strong>Status:</strong> ' + (sale.total - sale.paid <= 0 ? '<span class="pill green">Paid</span>' : '<span class="pill red">Due: ' + fmtTk(sale.total - sale.paid) + '</span>') + '</div>' +
         '</div>' +
 
         '<table><thead><tr><th>Item</th><th class="num">Qty</th><th>Unit</th><th class="num">Unit Price</th><th class="num">Line Total</th></tr></thead><tbody>' +
@@ -1252,13 +1296,18 @@
     printArea.innerHTML =
       '<div class="invoice">' +
         '<div class="invoice-head">' +
-          '<div>' +
-            '<h1>ISLAM ENTERPRISE</h1>' +
-            '<div>Quality Materials, Lasting Trust</div>' +
-            '<div>Phone: 01700-000000 | Address: Main Road, Shop #12</div>' +
+          '<div style="display:flex; align-items:center; gap:14px;">' +
+            '<div style="background:#fff; padding:4px 8px; border-radius:6px; border:1px solid #ccc; display:inline-block;">' +
+              '<img src="/islamEnterprise_logo.png" alt="Islam Enterprise Logo" style="height:48px; width:auto; object-fit:contain; display:block;">' +
+            '</div>' +
+            '<div>' +
+              '<h1 style="margin:0; font-size:20px; color:#000;">ISLAM ENTERPRISE</h1>' +
+              '<div style="font-size:12px; color:#444; margin-top:2px;">Quality Materials, Lasting Trust</div>' +
+              '<div style="font-size:11px; color:#666; margin-top:2px;">Phone: 01700-000000 | Address: Main Road, Shop #12</div>' +
+            '</div>' +
           '</div>' +
           '<div style="text-align:right;">' +
-            '<h2>INVOICE</h2>' +
+            '<h2 style="margin:0; font-size:18px; color:#000;">INVOICE</h2>' +
             '<div><strong>Inv No:</strong> ' + sale.invoice_no + '</div>' +
             '<div><strong>Date:</strong> ' + sale.date + '</div>' +
           '</div>' +
