@@ -1,7 +1,7 @@
 node_modules/
 .DS_Store
 *.log
-Backup/
+android/
 data/*.db-shm
 data/*.db-wal
 data/*.restore_tmp
