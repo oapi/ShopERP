@@ -1,7 +1,7 @@
 {
-  "name": "Islam Enterprise ShopERP",
-  "short_name": "IslamERP",
-  "description": "Rod & Cement Shop Management System",
+  "name": "CoreTrade ERP — Islam Enterprise",
+  "short_name": "CoreTrade",
+  "description": "CoreTrade ERP - Quality Materials, Lasting Trust",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

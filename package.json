@@ -1,7 +1,7 @@
 {
-  "name": "rod-cement-shop",
+  "name": "coretrade-erp",
   "version": "1.0.0",
-  "description": "Management system for Islam Enterprise - A Trustable Rod & Cement Supplier",
+  "description": "CoreTrade ERP for Islam Enterprise - Quality Materials, Lasting Trust",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

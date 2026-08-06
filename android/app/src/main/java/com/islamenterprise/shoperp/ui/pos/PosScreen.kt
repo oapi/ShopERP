@@ -51,7 +51,7 @@ fun PosScreen(
                 title = {
                     Column {
                         Text(
-                            "Islam Enterprise POS",
+                            "CoreTrade ERP — POS",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )

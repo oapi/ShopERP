@@ -1,4 +1,4 @@
-// Rod & Cement Shop Management — zero-dependency Node.js server
+// CoreTrade ERP — Islam Enterprise (Quality Materials, Lasting Trust) — zero-dependency Node.js server
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -271,7 +271,7 @@ route('GET', '/api/system/backup', (req, res) => {
     const data = fs.readFileSync(dbPath);
     res.writeHead(200, {
       'Content-Type': 'application/x-sqlite3',
-      'Content-Disposition': `attachment; filename="islam_enterprise_backup_${today()}.db"`,
+      'Content-Disposition': `attachment; filename="coretrade_erp_backup_${today()}.db"`,
     });
     res.end(data);
   } catch (e) {
@@ -1415,7 +1415,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log('');
-  console.log('  ✔ Islam Enterprise — Trustable Rod & Cement Supplier system running');
+  console.log('  ✔ CoreTrade ERP — Islam Enterprise (Quality Materials, Lasting Trust) running');
   console.log(`  → Open http://localhost:${PORT} in your browser`);
   console.log('');
 });

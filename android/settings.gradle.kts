@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ShopERP"
+rootProject.name = "CoreTradeERP"
 include(":app")

@@ -1,5 +1,6 @@
 /**
- * Islam Enterprise — Rod & Cement Shop Management System
+ * CoreTrade ERP — Islam Enterprise
+ * Quality Materials, Lasting Trust
  * Vanilla JS Single-Page Application logic with Auth, Capital Accounts, Bulk CSV Import/Export & Database Backup/Restore
  */
 
@@ -109,7 +110,7 @@
           .then(blob => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'islam_enterprise_backup_' + todayStr() + '.db';
+            a.download = 'coretrade_erp_backup_' + todayStr() + '.db';
             a.click();
             showToast('Database backup downloaded', 'success');
           })
@@ -1154,7 +1155,7 @@
         '<div class="invoice-head">' +
           '<div>' +
             '<h1>ISLAM ENTERPRISE</h1>' +
-            '<div>A Trustable Rod &amp; Cement Supplier (Retail &amp; Wholesale)</div>' +
+            '<div>Quality Materials, Lasting Trust</div>' +
             '<div>Phone: 01700-000000 | Address: Main Road, Shop #12</div>' +
           '</div>' +
           '<div style="text-align:right;">' +

@@ -1,5 +1,6 @@
-# Islam Enterprise — Rod & Cement ShopERP
+# CoreTrade ERP — Islam Enterprise
 
+> **Quality Materials, Lasting Trust**  
 > **A High-Performance, Zero-Dependency POS, Inventory & Financial Management System**  
 > Custom-built for building material shops, rod & cement traders, and hardware suppliers.
 
@@ -7,7 +8,7 @@
 
 ## 🚀 System Overview
 
-**Islam Enterprise ShopERP** is an enterprise-grade ERP, POS, and financial management application designed specifically for rod and cement suppliers. Built with a **zero-dependency philosophy**, the entire backend runs using native Node.js (`node:http`, `node:sqlite`), delivering ultra-fast startup times, low memory consumption, and zero external dependency risk.
+**CoreTrade ERP** is an enterprise-grade ERP, POS, and financial management application designed specifically for **Islam Enterprise**. Built with a **zero-dependency philosophy**, the entire backend runs using native Node.js (`node:http`, `node:sqlite`), delivering ultra-fast startup times, low memory consumption, and zero external dependency risk.
 
 ---
 

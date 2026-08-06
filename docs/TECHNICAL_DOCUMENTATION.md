@@ -1,7 +1,7 @@
-# Technical Documentation — Islam Enterprise ShopERP
+# Technical Documentation — CoreTrade ERP (Islam Enterprise)
 
 **System Version**: 2.0.0  
-**Author**: Islam Enterprise Engineering Team  
+**Author**: CoreTrade ERP Engineering Team  
 **Architecture**: Monolithic Zero-Dependency SPA + REST Engine  
 **Database**: SQLite 3 (WAL Mode via `node:sqlite`)  
 
@@ -20,7 +20,7 @@
 
 ## 1. Project Overview
 
-**Islam Enterprise ShopERP** is an integrated Point of Sale (POS), Inventory Control, Customer/Supplier Ledger, and Multi-Account Financial ERP designed specifically for building material traders (rod, cement, brick, hardware).
+**CoreTrade ERP** is an integrated Point of Sale (POS), Inventory Control, Customer/Supplier Ledger, and Multi-Account Financial ERP designed for **Islam Enterprise** ("Quality Materials, Lasting Trust") to manage building material trading (rod, cement, brick, hardware).
 
 ### Core Highlights
 - **Zero External Dependencies**: Operates exclusively using Node.js standard runtime libraries (`node:http`, `node:sqlite`, `node:crypto`, `node:fs`).
