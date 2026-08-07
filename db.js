@@ -167,6 +167,11 @@ CREATE TABLE IF NOT EXISTS expenses (
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_date ON purchases(date);
@@ -228,6 +233,22 @@ if (count === 0) {
     ['Cement PCC',  'cement', 'Seven Rings', '50kg bag', 'bag', 455, 515, 495, 0, 50],
   ];
   for (const row of seed) ins.run(...row);
+}
+
+// Seed Default System Configurations
+const insSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
+const defaultSettings = [
+  ['business_name', 'Islam Enterprise'],
+  ['business_address', 'Main Road, Shop #12'],
+  ['business_phone', '01700-000000'],
+  ['business_tagline', 'Quality Materials, Lasting Trust'],
+  ['business_logo', '/islamEnterprise_logo.png'],
+  ['currency_symbol', '৳'],
+  ['timezone_date_format', 'YYYY-MM-DD'],
+  ['low_stock_threshold', '100'],
+];
+for (const [k, v] of defaultSettings) {
+  insSetting.run(k, v);
 }
 
 module.exports = {

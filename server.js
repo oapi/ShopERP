@@ -7,12 +7,15 @@ const { db, hashPassword } = require('./db');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
-  '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
   '.csv': 'text/csv; charset=utf-8',
 };
 
@@ -223,6 +226,80 @@ function accountBalance(acctId) {
   return Math.round(net * 100) / 100;
 }
 
+// Server-side Pagination, Sorting & Filtering Query Helper
+function queryPaginated(q, {
+  fromSql,
+  selectCols = '*',
+  allowedSortCols = {},
+  defaultSortCol = 'id',
+  defaultSortDir = 'DESC',
+  searchCols = [],
+  buildWhere = null
+}) {
+  const whereClauses = [];
+  const args = [];
+
+  if (buildWhere) {
+    buildWhere(whereClauses, args);
+  }
+
+  const searchTerm = str(q.get('search'));
+  if (searchTerm && searchCols.length > 0) {
+    const likePattern = `%${searchTerm}%`;
+    const searchClause = searchCols.map(c => `${c} LIKE ?`).join(' OR ');
+    whereClauses.push(`(${searchClause})`);
+    searchCols.forEach(() => args.push(likePattern));
+  }
+
+  const whereStr = whereClauses.length > 0 ? ' WHERE ' + whereClauses.join(' AND ') : '';
+
+  // Count total records
+  const countSql = `SELECT COUNT(*) AS c FROM ${fromSql}${whereStr}`;
+  const total = db.prepare(countSql).get(...args).c;
+
+  // Pagination parameters
+  const rawPage = parseInt(q.get('page'), 10);
+  const page = (Number.isFinite(rawPage) && rawPage > 0) ? rawPage : 1;
+
+  const rawLimit = q.get('limit');
+  let limit = 10;
+  if (rawLimit === 'all') {
+    limit = Math.max(1, total);
+  } else {
+    const parsedLimit = parseInt(rawLimit, 10);
+    if (Number.isFinite(parsedLimit) && parsedLimit > 0) {
+      limit = Math.min(100, parsedLimit);
+    }
+  }
+
+  const totalPages = Math.ceil(total / limit) || 1;
+  const validPage = Math.min(page, totalPages);
+  const offset = (validPage - 1) * limit;
+
+  // Sorting parameters with whitelisting
+  const reqSortBy = str(q.get('sort_by'));
+  const sortColExpr = allowedSortCols[reqSortBy] || allowedSortCols[defaultSortCol] || defaultSortCol;
+
+  const reqSortDir = str(q.get('sort_dir')).toUpperCase();
+  const sortDir = (reqSortDir === 'ASC' || reqSortDir === 'DESC') ? reqSortDir : defaultSortDir;
+
+  const fromParts = fromSql.trim().split(/\s+/);
+  const tableOrAlias = fromParts.length > 1 ? fromParts[fromParts.length - 1] : fromParts[0];
+  const orderStr = ` ORDER BY ${sortColExpr} ${sortDir}, ${tableOrAlias}.id ${sortDir}`;
+
+  // Fetch paginated data
+  const dataSql = `SELECT ${selectCols} FROM ${fromSql}${whereStr}${orderStr} LIMIT ? OFFSET ?`;
+  const data = db.prepare(dataSql).all(...args, limit, offset);
+
+  return {
+    data,
+    total,
+    page: validPage,
+    limit,
+    total_pages: totalPages
+  };
+}
+
 // ---------- API handlers ----------
 const routes = [];
 function route(method, pattern, handler) {
@@ -259,6 +336,60 @@ route('POST', '/api/auth/logout', (req, res) => {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (token) db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
   json(res, 200, { ok: true });
+});
+
+// ---- Global Settings Routes ----
+route('GET', '/api/settings', (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  const rows = db.prepare('SELECT key, value FROM settings').all();
+  const settings = {};
+  for (const r of rows) {
+    settings[r.key] = r.value;
+  }
+  json(res, 200, settings);
+});
+
+route('PUT', '/api/settings', async (req, res) => {
+  const user = requireAdmin(req, res);
+  if (!user) return;
+  const b = await readJSON(req);
+  if (!b || typeof b !== 'object') return err(res, 400, 'Invalid settings payload');
+
+  if (b.business_logo && typeof b.business_logo === 'string' && b.business_logo.startsWith('data:image/')) {
+    try {
+      const matches = b.business_logo.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
+      if (matches) {
+        let ext = matches[1].toLowerCase();
+        if (ext === 'jpeg') ext = 'jpg';
+        if (ext === 'svg+xml') ext = 'svg';
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        const filename = `logo_${Date.now()}.${ext}`;
+        const filePath = path.join(UPLOADS_DIR, filename);
+        fs.writeFileSync(filePath, buffer);
+        b.business_logo = `/uploads/${filename}`;
+      }
+    } catch (e) {
+      console.error('Failed to save business logo:', e);
+    }
+  }
+
+  const stmt = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+  transaction(() => {
+    for (const [k, v] of Object.entries(b)) {
+      if (typeof k === 'string' && v !== undefined && v !== null) {
+        stmt.run(k, String(v));
+      }
+    }
+  });
+
+  const rows = db.prepare('SELECT key, value FROM settings').all();
+  const settings = {};
+  for (const r of rows) {
+    settings[r.key] = r.value;
+  }
+  json(res, 200, { message: 'Settings updated successfully', settings });
 });
 
 // ---- Database Backup & Restore Routes ----
@@ -328,7 +459,7 @@ route('POST', '/api/system/restore', async (req, res) => {
         DELETE FROM users;
       `);
 
-      const tables = ['users', 'sessions', 'accounts', 'account_transactions', 'products', 'customers', 'suppliers', 'sales', 'sale_items', 'purchases', 'purchase_items', 'payments', 'expenses'];
+      const tables = ['users', 'sessions', 'accounts', 'account_transactions', 'products', 'customers', 'suppliers', 'sales', 'sale_items', 'purchases', 'purchase_items', 'payments', 'expenses', 'settings'];
       for (const t of tables) {
         try {
           const rows = sourceDb.prepare(`SELECT * FROM ${t}`).all();
@@ -835,11 +966,34 @@ route('POST', '/api/accounts/transfer', async (req, res) => {
 // ---- Products ----
 route('GET', '/api/products', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = 'SELECT * FROM products WHERE active = 1';
-  const args = [];
-  if (q.get('search')) { sql += ' AND (name LIKE ? OR brand LIKE ? OR size LIKE ?)'; const s = `%${q.get('search')}%`; args.push(s, s, s); }
-  sql += ' ORDER BY category, name, size';
-  json(res, 200, db.prepare(sql).all(...args));
+  const allowedSortCols = {
+    name: 'name', category: 'category', brand: 'brand', size: 'size', unit: 'unit',
+    purchase_price: 'purchase_price', retail_price: 'retail_price', wholesale_price: 'wholesale_price',
+    stock_qty: 'stock_qty', low_stock_alert: 'low_stock_alert', id: 'id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'products',
+    selectCols: '*',
+    allowedSortCols,
+    defaultSortCol: 'name',
+    defaultSortDir: 'ASC',
+    searchCols: ['name', 'brand', 'size', 'category'],
+    buildWhere: (clauses, args) => {
+      clauses.push('active = 1');
+      if (q.get('category')) {
+        clauses.push('category = ?');
+        args.push(q.get('category'));
+      }
+    }
+  });
+  json(res, 200, result);
+});
+
+route('GET', '/api/products/:id', (req, res, p) => {
+  if (!requireAuth(req, res)) return;
+  const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(p.id);
+  if (!prod) return err(res, 404, 'Product not found');
+  json(res, 200, prod);
 });
 
 route('POST', '/api/products', async (req, res) => {
@@ -873,13 +1027,26 @@ route('DELETE', '/api/products/:id', (req, res, p) => {
 // ---- Customers ----
 route('GET', '/api/customers', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = 'SELECT * FROM customers WHERE active = 1';
-  const args = [];
-  if (q.get('search')) { sql += ' AND (name LIKE ? OR phone LIKE ?)'; const s = `%${q.get('search')}%`; args.push(s, s); }
-  sql += ' ORDER BY name';
-  const rows = db.prepare(sql).all(...args);
-  for (const c of rows) c.balance = customerBalance(c.id);
-  json(res, 200, rows);
+  const allowedSortCols = {
+    name: 'name', phone: 'phone', address: 'address', type: 'type', id: 'id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'customers',
+    selectCols: '*',
+    allowedSortCols,
+    defaultSortCol: 'name',
+    defaultSortDir: 'ASC',
+    searchCols: ['name', 'phone', 'address'],
+    buildWhere: (clauses, args) => {
+      clauses.push('active = 1');
+      if (q.get('type')) {
+        clauses.push('type = ?');
+        args.push(q.get('type'));
+      }
+    }
+  });
+  for (const c of result.data) c.balance = customerBalance(c.id);
+  json(res, 200, result);
 });
 
 route('POST', '/api/customers', async (req, res) => {
@@ -901,6 +1068,14 @@ route('PUT', '/api/customers/:id', async (req, res, p) => {
   db.prepare('UPDATE customers SET name=?, phone=?, address=?, type=? WHERE id=?').run(
     str(b.name) || existing.name, str(b.phone), str(b.address), str(b.type) === 'wholesale' ? 'wholesale' : 'retail', p.id);
   const c = db.prepare('SELECT * FROM customers WHERE id = ?').get(p.id);
+  c.balance = customerBalance(c.id);
+  json(res, 200, c);
+});
+
+route('GET', '/api/customers/:id', (req, res, p) => {
+  if (!requireAuth(req, res)) return;
+  const c = db.prepare('SELECT * FROM customers WHERE id = ?').get(p.id);
+  if (!c) return err(res, 404, 'Customer not found');
   c.balance = customerBalance(c.id);
   json(res, 200, c);
 });
@@ -929,13 +1104,22 @@ route('GET', '/api/customers/:id/ledger', (req, res, p) => {
 // ---- Suppliers ----
 route('GET', '/api/suppliers', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = 'SELECT * FROM suppliers WHERE active = 1';
-  const args = [];
-  if (q.get('search')) { sql += ' AND (name LIKE ? OR phone LIKE ?)'; const s = `%${q.get('search')}%`; args.push(s, s); }
-  sql += ' ORDER BY name';
-  const rows = db.prepare(sql).all(...args);
-  for (const s of rows) s.balance = supplierBalance(s.id);
-  json(res, 200, rows);
+  const allowedSortCols = {
+    name: 'name', phone: 'phone', address: 'address', id: 'id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'suppliers',
+    selectCols: '*',
+    allowedSortCols,
+    defaultSortCol: 'name',
+    defaultSortDir: 'ASC',
+    searchCols: ['name', 'phone', 'address'],
+    buildWhere: (clauses, args) => {
+      clauses.push('active = 1');
+    }
+  });
+  for (const s of result.data) s.balance = supplierBalance(s.id);
+  json(res, 200, result);
 });
 
 route('POST', '/api/suppliers', async (req, res) => {
@@ -955,6 +1139,14 @@ route('PUT', '/api/suppliers/:id', async (req, res, p) => {
   if (!existing) return err(res, 404, 'Supplier not found');
   db.prepare('UPDATE suppliers SET name=?, phone=?, address=? WHERE id=?').run(str(b.name) || existing.name, str(b.phone), str(b.address), p.id);
   const s = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(p.id);
+  s.balance = supplierBalance(s.id);
+  json(res, 200, s);
+});
+
+route('GET', '/api/suppliers/:id', (req, res, p) => {
+  if (!requireAuth(req, res)) return;
+  const s = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(p.id);
+  if (!s) return err(res, 404, 'Supplier not found');
   s.balance = supplierBalance(s.id);
   json(res, 200, s);
 });
@@ -983,14 +1175,31 @@ route('GET', '/api/suppliers/:id/ledger', (req, res, p) => {
 // ---- Sales ----
 route('GET', '/api/sales', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = `SELECT s.*, (s.total - s.paid) AS due FROM sales s WHERE 1=1`;
-  const args = [];
-  if (q.get('from')) { sql += ' AND s.date >= ?'; args.push(q.get('from')); }
-  if (q.get('to')) { sql += ' AND s.date <= ?'; args.push(q.get('to')); }
-  if (q.get('customer_id')) { sql += ' AND s.customer_id = ?'; args.push(q.get('customer_id')); }
-  if (q.get('search')) { sql += ' AND (s.invoice_no LIKE ? OR s.customer_name LIKE ?)'; const s = `%${q.get('search')}%`; args.push(s, s); }
-  sql += ' ORDER BY s.date DESC, s.id DESC LIMIT 500';
-  json(res, 200, db.prepare(sql).all(...args));
+  const allowedSortCols = {
+    invoice_no: 's.invoice_no', date: 's.date', customer_name: 's.customer_name',
+    sale_type: 's.sale_type', total: 's.total', paid: 's.paid', due: '(s.total - s.paid)', id: 's.id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'sales s',
+    selectCols: 's.*, (s.total - s.paid) AS due',
+    allowedSortCols,
+    defaultSortCol: 'date',
+    defaultSortDir: 'DESC',
+    searchCols: ['s.invoice_no', 's.customer_name'],
+    buildWhere: (clauses, args) => {
+      if (q.get('from')) { clauses.push('s.date >= ?'); args.push(q.get('from')); }
+      if (q.get('to')) { clauses.push('s.date <= ?'); args.push(q.get('to')); }
+      if (q.get('customer_id')) { clauses.push('s.customer_id = ?'); args.push(q.get('customer_id')); }
+      if (q.get('sale_type')) { clauses.push('s.sale_type = ?'); args.push(q.get('sale_type')); }
+      if (q.get('status')) {
+        const st = q.get('status');
+        if (st === 'paid') clauses.push('(s.total - s.paid) <= 0.009');
+        else if (st === 'due') clauses.push('s.paid <= 0.009 AND (s.total - s.paid) > 0.009');
+        else if (st === 'partial') clauses.push('s.paid > 0.009 AND (s.total - s.paid) > 0.009');
+      }
+    }
+  });
+  json(res, 200, result);
 });
 
 route('GET', '/api/sales/:id', (req, res, p) => {
@@ -1093,13 +1302,24 @@ route('DELETE', '/api/sales/:id', (req, res, p) => {
 // ---- Purchases ----
 route('GET', '/api/purchases', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = `SELECT pu.*, (pu.total - pu.paid) AS due FROM purchases pu WHERE 1=1`;
-  const args = [];
-  if (q.get('from')) { sql += ' AND pu.date >= ?'; args.push(q.get('from')); }
-  if (q.get('to')) { sql += ' AND pu.date <= ?'; args.push(q.get('to')); }
-  if (q.get('supplier_id')) { sql += ' AND pu.supplier_id = ?'; args.push(q.get('supplier_id')); }
-  sql += ' ORDER BY pu.date DESC, pu.id DESC LIMIT 500';
-  json(res, 200, db.prepare(sql).all(...args));
+  const allowedSortCols = {
+    ref_no: 'pu.ref_no', date: 'pu.date', supplier_name: 'pu.supplier_name',
+    total: 'pu.total', paid: 'pu.paid', due: '(pu.total - pu.paid)', id: 'pu.id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'purchases pu',
+    selectCols: 'pu.*, (pu.total - pu.paid) AS due',
+    allowedSortCols,
+    defaultSortCol: 'date',
+    defaultSortDir: 'DESC',
+    searchCols: ['pu.ref_no', 'pu.supplier_name'],
+    buildWhere: (clauses, args) => {
+      if (q.get('from')) { clauses.push('pu.date >= ?'); args.push(q.get('from')); }
+      if (q.get('to')) { clauses.push('pu.date <= ?'); args.push(q.get('to')); }
+      if (q.get('supplier_id')) { clauses.push('pu.supplier_id = ?'); args.push(q.get('supplier_id')); }
+    }
+  });
+  json(res, 200, result);
 });
 
 route('GET', '/api/purchases/:id', (req, res, p) => {
@@ -1197,21 +1417,30 @@ route('DELETE', '/api/purchases/:id', (req, res, p) => {
 // ---- Payments (due collection / supplier payment) ----
 route('GET', '/api/payments', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = 'SELECT * FROM payments WHERE 1=1';
-  const args = [];
-  if (q.get('party_type')) { sql += ' AND party_type = ?'; args.push(q.get('party_type')); }
-  if (q.get('party_id')) { sql += ' AND party_id = ?'; args.push(q.get('party_id')); }
-  if (q.get('from')) { sql += ' AND date >= ?'; args.push(q.get('from')); }
-  if (q.get('to')) { sql += ' AND date <= ?'; args.push(q.get('to')); }
-  sql += ' ORDER BY date DESC, id DESC LIMIT 500';
-  const rows = db.prepare(sql).all(...args);
+  const allowedSortCols = {
+    date: 'date', amount: 'amount', method: 'method', party_type: 'party_type', party_id: 'party_id', id: 'id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'payments',
+    selectCols: '*',
+    allowedSortCols,
+    defaultSortCol: 'date',
+    defaultSortDir: 'DESC',
+    searchCols: ['note', 'method'],
+    buildWhere: (clauses, args) => {
+      if (q.get('party_type')) { clauses.push('party_type = ?'); args.push(q.get('party_type')); }
+      if (q.get('party_id')) { clauses.push('party_id = ?'); args.push(q.get('party_id')); }
+      if (q.get('from')) { clauses.push('date >= ?'); args.push(q.get('from')); }
+      if (q.get('to')) { clauses.push('date <= ?'); args.push(q.get('to')); }
+    }
+  });
   const cn = db.prepare('SELECT name FROM customers WHERE id = ?');
   const sn = db.prepare('SELECT name FROM suppliers WHERE id = ?');
-  for (const r of rows) {
+  for (const r of result.data) {
     const rec = r.party_type === 'customer' ? cn.get(r.party_id) : sn.get(r.party_id);
     r.party_name = rec ? rec.name : '#' + r.party_id;
   }
-  json(res, 200, rows);
+  json(res, 200, result);
 });
 
 route('POST', '/api/payments', async (req, res) => {
@@ -1259,12 +1488,23 @@ route('DELETE', '/api/payments/:id', (req, res, p) => {
 // ---- Expenses ----
 route('GET', '/api/expenses', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
-  let sql = 'SELECT * FROM expenses WHERE 1=1';
-  const args = [];
-  if (q.get('from')) { sql += ' AND date >= ?'; args.push(q.get('from')); }
-  if (q.get('to')) { sql += ' AND date <= ?'; args.push(q.get('to')); }
-  sql += ' ORDER BY date DESC, id DESC LIMIT 500';
-  json(res, 200, db.prepare(sql).all(...args));
+  const allowedSortCols = {
+    date: 'date', category: 'category', amount: 'amount', note: 'note', id: 'id'
+  };
+  const result = queryPaginated(q, {
+    fromSql: 'expenses',
+    selectCols: '*',
+    allowedSortCols,
+    defaultSortCol: 'date',
+    defaultSortDir: 'DESC',
+    searchCols: ['category', 'note'],
+    buildWhere: (clauses, args) => {
+      if (q.get('from')) { clauses.push('date >= ?'); args.push(q.get('from')); }
+      if (q.get('to')) { clauses.push('date <= ?'); args.push(q.get('to')); }
+      if (q.get('category')) { clauses.push('category = ?'); args.push(q.get('category')); }
+    }
+  });
+  json(res, 200, result);
 });
 
 route('POST', '/api/expenses', async (req, res) => {
@@ -1302,6 +1542,77 @@ route('DELETE', '/api/expenses/:id', (req, res, p) => {
   json(res, 200, { ok: true });
 });
 
+// ---- Bulk Delete Route ----
+route('POST', '/api/bulk-delete/:entity', async (req, res, p) => {
+  if (!requireAdmin(req, res)) return;
+  const entity = p.entity;
+  const b = await readJSON(req);
+  const rawIds = Array.isArray(b.ids) ? b.ids : [];
+  const ids = rawIds.map(id => Number(id)).filter(id => Number.isInteger(id) && id > 0);
+
+  if (ids.length === 0) return err(res, 400, 'No valid IDs provided for bulk delete');
+
+  try {
+    let deletedCount = 0;
+    transaction(() => {
+      if (entity === 'products') {
+        const stmt = db.prepare('UPDATE products SET active = 0 WHERE id = ?');
+        for (const id of ids) { stmt.run(id); deletedCount++; }
+      } else if (entity === 'customers') {
+        const stmt = db.prepare('UPDATE customers SET active = 0 WHERE id = ?');
+        for (const id of ids) { stmt.run(id); deletedCount++; }
+      } else if (entity === 'suppliers') {
+        const stmt = db.prepare('UPDATE suppliers SET active = 0 WHERE id = ?');
+        for (const id of ids) { stmt.run(id); deletedCount++; }
+      } else if (entity === 'expenses') {
+        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'expense' AND ref_id = ?");
+        const delExp = db.prepare('DELETE FROM expenses WHERE id = ?');
+        for (const id of ids) {
+          delTx.run(id);
+          delExp.run(id);
+          deletedCount++;
+        }
+      } else if (entity === 'sales') {
+        const getItems = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?');
+        const incStock = db.prepare('UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?');
+        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'sale' AND ref_id = ?");
+        const delItems = db.prepare('DELETE FROM sale_items WHERE sale_id = ?');
+        const delSale = db.prepare('DELETE FROM sales WHERE id = ?');
+
+        for (const id of ids) {
+          const items = getItems.all(id);
+          for (const it of items) incStock.run(it.qty, it.product_id);
+          delTx.run(id);
+          delItems.run(id);
+          delSale.run(id);
+          deletedCount++;
+        }
+      } else if (entity === 'purchases') {
+        const getItems = db.prepare('SELECT * FROM purchase_items WHERE purchase_id = ?');
+        const decStock = db.prepare('UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?');
+        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'purchase' AND ref_id = ?");
+        const delItems = db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?');
+        const delPu = db.prepare('DELETE FROM purchases WHERE id = ?');
+
+        for (const id of ids) {
+          const items = getItems.all(id);
+          for (const it of items) decStock.run(it.qty, it.product_id);
+          delTx.run(id);
+          delItems.run(id);
+          delPu.run(id);
+          deletedCount++;
+        }
+      } else {
+        throw new Error('Invalid bulk delete entity');
+      }
+    });
+
+    json(res, 200, { ok: true, count: deletedCount, message: `Successfully deleted ${deletedCount} item(s)` });
+  } catch (e) {
+    err(res, 400, e.message || 'Bulk delete failed');
+  }
+});
+
 // ---- Dashboard ----
 route('GET', '/api/dashboard', (req, res) => {
   if (!requireAuth(req, res)) return;
@@ -1321,6 +1632,30 @@ route('GET', '/api/dashboard', (req, res) => {
                  - (SELECT COALESCE(SUM(amount),0) FROM payments WHERE party_type='supplier' AND party_id=s.id) AS due
       FROM suppliers s WHERE s.active=1) WHERE due > 0`).get().total;
 
+  const customer_dues_list = db.prepare(`
+    SELECT * FROM (
+      SELECT c.id, c.name, c.phone,
+        (SELECT COALESCE(SUM(total - paid), 0) FROM sales WHERE customer_id = c.id)
+        - (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE party_type = 'customer' AND party_id = c.id) AS due
+      FROM customers c
+      WHERE c.active = 1
+    ) WHERE due > 0.01
+    ORDER BY due DESC
+    LIMIT 10
+  `).all();
+
+  const supplier_dues_list = db.prepare(`
+    SELECT * FROM (
+      SELECT s.id, s.name, s.phone,
+        (SELECT COALESCE(SUM(total - paid), 0) FROM purchases WHERE supplier_id = s.id)
+        - (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE party_type = 'supplier' AND party_id = s.id) AS due
+      FROM suppliers s
+      WHERE s.active = 1
+    ) WHERE due > 0.01
+    ORDER BY due DESC
+    LIMIT 10
+  `).all();
+
   const lowStock = db.prepare('SELECT * FROM products WHERE active=1 AND low_stock_alert > 0 AND stock_qty <= low_stock_alert ORDER BY stock_qty').all();
   const stockValue = db.prepare('SELECT COALESCE(SUM(stock_qty * purchase_price),0) AS v FROM products WHERE active=1').get().v;
   const recentSales = db.prepare('SELECT id, invoice_no, customer_name, date, total, paid, (total-paid) AS due FROM sales ORDER BY id DESC LIMIT 8').all();
@@ -1339,6 +1674,8 @@ route('GET', '/api/dashboard', (req, res) => {
     },
     customer_due_total: Math.round(custDue * 100) / 100,
     supplier_due_total: Math.round(suppDue * 100) / 100,
+    customer_dues_list,
+    supplier_dues_list,
     stock_value: Math.round(stockValue * 100) / 100,
     total_capital: Math.round(totalCapital * 100) / 100,
     low_stock: lowStock,
