@@ -108,8 +108,8 @@
       .replace(/'/g, '&#039;');
   };
 
-  const ICON_EXPORT_CSV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-  const ICON_IMPORT_CSV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+  const ICON_EXPORT_CSV = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+  const ICON_IMPORT_CSV = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
 
   async function fetchSettings() {
     try {
@@ -904,63 +904,6 @@
       '</div>' +
       '</div>' +
 
-      // Receivables & Payables Notification Center Widget
-      '<div class="due-notifications-container">' +
-      '<div class="due-alert-card receivables">' +
-      '<div class="due-card-header">' +
-      '<div class="due-card-title">💵 Overdue Receivables (Customer Dues)</div>' +
-      '<div class="due-card-total txt-red">' + fmtTk(data.customer_due_total) + '</div>' +
-      '</div>' +
-      '<div class="due-list-body">' +
-      ((!data.customer_dues_list || data.customer_dues_list.length === 0)
-        ? '<div class="empty">No customer dues pending! 🎉</div>'
-        : data.customer_dues_list.map(c =>
-          '<div class="due-item-row">' +
-          '<div>' +
-          '<div class="due-item-name">' + c.name + '</div>' +
-          '<div class="due-item-sub">📞 ' + (c.phone || 'No phone') + '</div>' +
-          '</div>' +
-          '<div class="due-item-right">' +
-          '<div class="due-item-amount txt-red">' + fmtTk(c.due) + '</div>' +
-          '<div class="due-actions">' +
-          '<button class="btn sm secondary btn-cust-ledger" data-id="' + c.id + '" title="View Ledger">📖 Ledger</button>' +
-          '<button class="btn sm green btn-collect-pay" data-id="' + c.id + '" data-name="' + (c.name || '').replace(/"/g, '&quot;') + '" title="Collect Payment">💵 Collect</button>' +
-          '</div>' +
-          '</div>' +
-          '</div>'
-        ).join('')
-      ) +
-      '</div>' +
-      '</div>' +
-
-      '<div class="due-alert-card payables">' +
-      '<div class="due-card-header">' +
-      '<div class="due-card-title">🚚 Outstanding Payables (Supplier Dues)</div>' +
-      '<div class="due-card-total txt-amber">' + fmtTk(data.supplier_due_total) + '</div>' +
-      '</div>' +
-      '<div class="due-list-body">' +
-      ((!data.supplier_dues_list || data.supplier_dues_list.length === 0)
-        ? '<div class="empty">All supplier dues settled! 👍</div>'
-        : data.supplier_dues_list.map(s =>
-          '<div class="due-item-row">' +
-          '<div>' +
-          '<div class="due-item-name">' + s.name + '</div>' +
-          '<div class="due-item-sub">📞 ' + (s.phone || 'No phone') + '</div>' +
-          '</div>' +
-          '<div class="due-item-right">' +
-          '<div class="due-item-amount txt-amber">' + fmtTk(s.due) + '</div>' +
-          '<div class="due-actions">' +
-          '<button class="btn sm secondary btn-supp-ledger" data-id="' + s.id + '" title="View Ledger">📖 Ledger</button>' +
-          '<button class="btn sm danger btn-make-pay" data-id="' + s.id + '" data-name="' + (s.name || '').replace(/"/g, '&quot;') + '" title="Make Payment">💸 Pay</button>' +
-          '</div>' +
-          '</div>' +
-          '</div>'
-        ).join('')
-      ) +
-      '</div>' +
-      '</div>' +
-      '</div>' +
-
       '<div class="stat-grid">' +
       '<div class="stat blue">' +
       '<div class="label">Today Sales</div>' +
@@ -1047,6 +990,63 @@
           '</tr>'
         ).join('') +
         '</tbody></table>'
+      ) +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+
+      // Receivables & Payables Notification Center Widget (at bottom)
+      '<div class="due-notifications-container">' +
+      '<div class="due-alert-card receivables">' +
+      '<div class="due-card-header">' +
+      '<div class="due-card-title">💵 Overdue Receivables (Customer Dues)</div>' +
+      '<div class="due-card-total txt-red">' + fmtTk(data.customer_due_total) + '</div>' +
+      '</div>' +
+      '<div class="due-list-body">' +
+      ((!data.customer_dues_list || data.customer_dues_list.length === 0)
+        ? '<div class="empty">No customer dues pending! 🎉</div>'
+        : data.customer_dues_list.map(c =>
+          '<div class="due-item-row">' +
+          '<div>' +
+          '<div class="due-item-name">' + c.name + '</div>' +
+          '<div class="due-item-sub">📞 ' + (c.phone || 'No phone') + '</div>' +
+          '</div>' +
+          '<div class="due-item-right">' +
+          '<div class="due-item-amount txt-red">' + fmtTk(c.due) + '</div>' +
+          '<div class="due-actions">' +
+          '<button class="btn sm secondary btn-cust-ledger" data-id="' + c.id + '" title="View Ledger">📖 Ledger</button>' +
+          '<button class="btn sm green btn-collect-pay" data-id="' + c.id + '" data-name="' + (c.name || '').replace(/"/g, '&quot;') + '" title="Collect Payment">💵 Collect</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>'
+        ).join('')
+      ) +
+      '</div>' +
+      '</div>' +
+
+      '<div class="due-alert-card payables">' +
+      '<div class="due-card-header">' +
+      '<div class="due-card-title">🚚 Outstanding Payables (Supplier Dues)</div>' +
+      '<div class="due-card-total txt-amber">' + fmtTk(data.supplier_due_total) + '</div>' +
+      '</div>' +
+      '<div class="due-list-body">' +
+      ((!data.supplier_dues_list || data.supplier_dues_list.length === 0)
+        ? '<div class="empty">All supplier dues settled! 👍</div>'
+        : data.supplier_dues_list.map(s =>
+          '<div class="due-item-row">' +
+          '<div>' +
+          '<div class="due-item-name">' + s.name + '</div>' +
+          '<div class="due-item-sub">📞 ' + (s.phone || 'No phone') + '</div>' +
+          '</div>' +
+          '<div class="due-item-right">' +
+          '<div class="due-item-amount txt-amber">' + fmtTk(s.due) + '</div>' +
+          '<div class="due-actions">' +
+          '<button class="btn sm secondary btn-supp-ledger" data-id="' + s.id + '" title="View Ledger">📖 Ledger</button>' +
+          '<button class="btn sm danger btn-make-pay" data-id="' + s.id + '" data-name="' + (s.name || '').replace(/"/g, '&quot;') + '" title="Make Payment">💸 Pay</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>'
+        ).join('')
       ) +
       '</div>' +
       '</div>' +
@@ -1513,8 +1513,7 @@
               '<td class="num ' + (s.due > 0 ? 'txt-red' : 'txt-green') + '">' + fmtTk(s.due) + '</td>' +
               '<td>' + statusPill + '</td>' +
               '<td>' +
-              '<button class="btn sm secondary btn-view-sale" data-id="' + s.id + '">View / Print</button> ' +
-              (isAdmin() ? '<button class="btn sm danger btn-delete-sale" data-id="' + s.id + '" data-inv="' + s.invoice_no + '">Delete</button>' : '') +
+              '<button class="btn sm secondary btn-view-sale" data-id="' + s.id + '">View / Print</button>' +
               '</td>' +
               '</tr>';
           }).join('') +
@@ -1536,8 +1535,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Sales Invoices</div><div class="page-sub">View and print past sales invoices</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-sales" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-sales" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-sales" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-sales" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-new-sale">+ New Sale</button>' +
       '</div>' +
       '</div>' +
@@ -1556,15 +1555,6 @@
     function bindSalesActions() {
       $$('.btn-view-sale', container).forEach(b => {
         b.onclick = () => viewSaleModal(b.dataset.id);
-      });
-      $$('.btn-delete-sale', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Are you sure you want to delete invoice ' + b.dataset.inv + '? Inventory will be restored.')) {
-            await api('/api/sales/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Invoice deleted and stock restored.', 'success');
-            loadSalesData();
-          }
-        };
       });
     }
 
@@ -1781,8 +1771,7 @@
               '<td class="num">' + fmtTk(pu.paid) + '</td>' +
               '<td class="num ' + (pu.due > 0 ? 'txt-red' : 'txt-green') + '">' + fmtTk(pu.due) + '</td>' +
               '<td>' +
-              '<button class="btn sm secondary btn-view-purchase" data-id="' + pu.id + '">Details</button> ' +
-              (isAdmin() ? '<button class="btn sm danger btn-delete-purchase" data-id="' + pu.id + '">Delete</button>' : '') +
+              '<button class="btn sm secondary btn-view-purchase" data-id="' + pu.id + '">Details</button>' +
               '</td>' +
               '</tr>';
           }).join('') +
@@ -1804,8 +1793,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Purchases &amp; Stock In</div><div class="page-sub">Record incoming inventory from suppliers</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-purchases" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-purchases" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-purchases" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-purchases" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-new-purchase">+ New Purchase</button>' +
       '</div>' +
       '</div>' +
@@ -1838,16 +1827,6 @@
             '</div>' +
             '</div>'
           );
-        };
-      });
-
-      $$('.btn-delete-purchase', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete this purchase? Stock quantity added by this purchase will be subtracted.')) {
-            await api('/api/purchases/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Purchase deleted and stock updated.', 'success');
-            loadPurchasesData();
-          }
         };
       });
     }
@@ -1935,7 +1914,7 @@
       '<div class="field" style="flex:2;"><label>Product</label><select id="pu-prod-id"><option value="">-- Choose Product --</option>' + products.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + ' (' + escHtml(p.brand || '') + ' ' + escHtml(p.size || '') + ') - Cost: ' + fmtTk(p.purchase_price) + '</option>').join('') + '</select></div>' +
       '<div class="field"><label>Qty</label><input type="number" id="pu-qty" min="0.01" step="any" value="10"></div>' +
       '<div class="field"><label>Unit Cost (' + curSym + ')</label><input type="number" id="pu-cost" min="0" step="any" value="0"></div>' +
-      '<div class="field"><button class="btn" id="btn-pu-add-item">+ Add</button></div>' +
+      '<div class="field"><button type="button" class="btn" id="btn-pu-add-item">+ Add</button></div>' +
       '</div>' +
       '</div>' +
 
@@ -1943,7 +1922,7 @@
 
       '<div class="form-row" style="margin-top:10px; align-items:center;">' +
       '<div class="field"><label>Pay From Account</label><select id="pu-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Amount Paid (' + curSym + ')</label><input type="number" id="pu-paid" min="0" step="any" value="0"></div>' +
+      '<div class="field"><label>Amount Paid (' + curSym + ')</label><div style="display:flex; gap:6px;"><input type="number" id="pu-paid" min="0" step="any" value="0"><button type="button" class="btn sm secondary" id="btn-pu-pay-full" title="Pay Total Amount">Full</button></div></div>' +
       '<div class="field" style="text-align:right;"><div>Total Amount: <strong id="pu-total-label" style="font-size:18px;">' + fmtTk(0) + '</strong></div></div>' +
       '</div>' +
 
@@ -1951,8 +1930,8 @@
       '</div>';
 
     const footerHtml =
-      '<button class="btn" id="btn-pu-submit">Save Purchase</button>' +
-      '<button class="btn secondary modal-cancel-btn">Cancel</button>';
+      '<button type="button" class="btn" id="btn-pu-submit">Save Purchase</button>' +
+      '<button type="button" class="btn secondary modal-cancel-btn">Cancel</button>';
 
     openModal('Record New Purchase', bodyHtml, footerHtml, true);
 
@@ -1980,7 +1959,7 @@
             '<td class="num">' + it.qty + ' ' + it.unit + '</td>' +
             '<td class="num">' + fmtTk(it.unit_cost) + '</td>' +
             '<td class="num"><strong>' + fmtTk(lt) + '</strong></td>' +
-            '<td><button class="btn sm danger btn-pu-del" data-idx="' + idx + '">&times;</button></td>' +
+            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '">&times;</button></td>' +
             '</tr>';
         }).join('');
       }
@@ -1994,6 +1973,15 @@
         };
       });
     };
+
+    const payFullBtn = $('#btn-pu-pay-full');
+    if (payFullBtn) {
+      payFullBtn.onclick = () => {
+        let total = 0;
+        purchaseItems.forEach(it => total += it.qty * it.unit_cost);
+        if ($('#pu-paid')) $('#pu-paid').value = Math.round(total * 100) / 100;
+      };
+    }
 
     const addPuItemBtn = $('#btn-pu-add-item');
     if (addPuItemBtn) {
@@ -2023,11 +2011,17 @@
         if (purchaseItems.length === 0) return showToast('Add at least one product item', 'error');
         let total = 0;
         purchaseItems.forEach(it => total += it.qty * it.unit_cost);
-        const paid = Number($('#pu-paid').value) || 0;
+        let paid = Number($('#pu-paid').value) || 0;
         const supplier_id = $('#pu-supplier-id').value ? Number($('#pu-supplier-id').value) : null;
 
         if (total - paid > 0.009 && !supplier_id) {
-          return showToast('Purchases on credit require selecting a saved supplier.', 'error');
+          // If cash supplier and paid wasn't entered, default paid to full total
+          if (paid === 0) {
+            paid = total;
+            if ($('#pu-paid')) $('#pu-paid').value = total;
+          } else {
+            return showToast('Purchases on credit require selecting a saved supplier.', 'error');
+          }
         }
 
         const account_id = $('#pu-account-id') ? Number($('#pu-account-id').value) : null;
@@ -2101,7 +2095,7 @@
               '<td class="num txt-muted">' + fmtNum(p.low_stock_alert) + '</td>' +
               '<td>' +
               (isAdmin() ?
-                '<button class="btn sm secondary btn-edit-prod" data-id="' + p.id + '">Edit</button> <button class="btn sm danger btn-del-prod" data-id="' + p.id + '">Delete</button>' :
+                '<button class="btn sm secondary btn-edit-prod" data-id="' + p.id + '">Edit</button>' :
                 '<span class="txt-muted" style="font-size:12px;">View Only</span>'
               ) +
               '</td>' +
@@ -2125,8 +2119,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Inventory &amp; Products</div><div class="page-sub">Manage product prices, stock, and alert limits</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-prods" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-prods" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-prods" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-prods" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-add-product">+ Add Product</button>' +
       '</div>' +
       '</div>' +
@@ -2148,15 +2142,6 @@
           api('/api/products/' + pid).then(prod => {
             openProductModal(prod, loadProductsData);
           });
-        };
-      });
-      $$('.btn-del-prod', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete this product?')) {
-            await api('/api/products/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Product deleted', 'success');
-            loadProductsData();
-          }
         };
       });
     }
@@ -2312,7 +2297,7 @@
               '<button class="btn sm green btn-cust-pay" data-id="' + c.id + '" data-name="' + (escHtml(c.name) || '').replace(/"/g, '&quot;') + '">💵 Receive Due</button> ' +
               '<button class="btn sm secondary btn-cust-ledger" data-id="' + c.id + '">Ledger</button> ' +
               (isAdmin() ?
-                '<button class="btn sm secondary btn-cust-edit" data-id="' + c.id + '">Edit</button> <button class="btn sm danger btn-cust-del" data-id="' + c.id + '">Delete</button>' : ''
+                '<button class="btn sm secondary btn-cust-edit" data-id="' + c.id + '">Edit</button>' : ''
               ) +
               '</td>' +
               '</tr>';
@@ -2335,8 +2320,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Customers &amp; Receivables</div><div class="page-sub">Customer balances, payment collection, and ledger statements</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-custs" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-custs" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-custs" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-custs" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-add-customer">+ Add Customer</button>' +
       '</div>' +
       '</div>' +
@@ -2364,15 +2349,6 @@
             const cust = await api('/api/customers/' + b.dataset.id);
             openAddCustomerModal(loadCustomersData, cust);
           } catch (e) { }
-        };
-      });
-      $$('.btn-cust-del', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete customer?')) {
-            await api('/api/customers/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Customer deleted', 'success');
-            loadCustomersData();
-          }
         };
       });
     }
@@ -2503,7 +2479,7 @@
               '<button class="btn sm danger btn-supp-pay" data-id="' + s.id + '" data-name="' + (escHtml(s.name) || '').replace(/"/g, '&quot;') + '">💸 Pay Supplier</button> ' +
               '<button class="btn sm secondary btn-supp-ledger" data-id="' + s.id + '">Ledger</button> ' +
               (isAdmin() ?
-                '<button class="btn sm secondary btn-supp-edit" data-id="' + s.id + '">Edit</button> <button class="btn sm danger btn-supp-del" data-id="' + s.id + '">Delete</button>' : ''
+                '<button class="btn sm secondary btn-supp-edit" data-id="' + s.id + '">Edit</button>' : ''
               ) +
               '</td>' +
               '</tr>';
@@ -2526,8 +2502,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Suppliers &amp; Payables</div><div class="page-sub">Manage factory suppliers, purchase dues, and ledger history</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-supps" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-supps" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-supps" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-supps" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-add-supplier">+ Add Supplier</button>' +
       '</div>' +
       '</div>' +
@@ -2554,15 +2530,6 @@
             const supp = await api('/api/suppliers/' + b.dataset.id);
             openAddSupplierModal(loadSuppliersData, supp);
           } catch (e) { }
-        };
-      });
-      $$('.btn-supp-del', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete supplier?')) {
-            await api('/api/suppliers/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Supplier deleted', 'success');
-            loadSuppliersData();
-          }
         };
       });
     }
@@ -2818,7 +2785,7 @@
           renderSortHeader('expenses', 'category', 'Category') +
           renderSortHeader('expenses', 'note', 'Note / Description') +
           renderSortHeader('expenses', 'amount', 'Amount', 'num') +
-          '<th>Action</th></tr></thead><tbody>' +
+          '</tr></thead><tbody>' +
           list.map(ex => {
             const isChecked = ts.selected && ts.selected.includes(ex.id);
             return '<tr>' +
@@ -2827,7 +2794,6 @@
               '<td><span class="pill gray">' + escHtml(ex.category) + '</span></td>' +
               '<td>' + escHtml(ex.note || 'N/A') + '</td>' +
               '<td class="num txt-red"><strong>' + fmtTk(ex.amount) + '</strong></td>' +
-              '<td>' + (isAdmin() ? '<button class="btn sm danger btn-del-exp" data-id="' + ex.id + '">Delete</button>' : '') + '</td>' +
               '</tr>';
           }).join('') +
           '</tbody></table></div>'
@@ -2848,8 +2814,8 @@
       '<div class="page-head">' +
       '<div><div class="page-title">Expenses Log</div><div class="page-sub">Track daily operating and shop expenses</div></div>' +
       '<div class="toolbar">' +
-      '<button class="btn secondary icon-btn" id="btn-export-expenses" title="Export CSV">' + ICON_EXPORT_CSV + '</button>' +
-      (isAdmin() ? '<button class="btn secondary icon-btn" id="btn-import-expenses" title="Import CSV">' + ICON_IMPORT_CSV + '</button>' : '') +
+      '<button class="btn secondary" id="btn-export-expenses" title="Export CSV">' + ICON_EXPORT_CSV + 'Export</button>' +
+      (isAdmin() ? '<button class="btn secondary" id="btn-import-expenses" title="Import CSV">' + ICON_IMPORT_CSV + 'Import</button>' : '') +
       '<button class="btn" id="btn-add-expense">+ Add Expense</button>' +
       '</div>' +
       '</div>' +
@@ -2865,17 +2831,7 @@
 
       '<div id="exp-content"></div>';
 
-    function bindExpActions() {
-      $$('.btn-del-exp', container).forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete expense log?')) {
-            await api('/api/expenses/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Expense deleted', 'success');
-            loadExpensesData();
-          }
-        };
-      });
-    }
+    function bindExpActions() { }
 
     let searchTimer = null;
     const expSearch = $('#exp-search', container);
@@ -3028,7 +2984,7 @@
           '<td>' +
           '<button class="btn sm secondary btn-acct-stmt" data-id="' + a.id + '">Statement</button> ' +
           (isAdmin() ?
-            '<button class="btn sm secondary btn-acct-edit" data-id="' + a.id + '">Edit</button> <button class="btn sm danger btn-acct-del" data-id="' + a.id + '">Delete</button>' : ''
+            '<button class="btn sm secondary btn-acct-edit" data-id="' + a.id + '">Edit</button>' : ''
           ) +
           '</td>' +
           '</tr>'
@@ -3066,15 +3022,6 @@
         b.onclick = () => {
           const acct = accounts.find(a => a.id === Number(b.dataset.id));
           openAddAccountModal(acct, refreshAccounts);
-        };
-      });
-      $$('.btn-acct-del').forEach(b => {
-        b.onclick = async () => {
-          if (confirm('Delete this account?')) {
-            await api('/api/accounts/' + b.dataset.id, { method: 'DELETE' });
-            showToast('Account deleted', 'success');
-            refreshAccounts();
-          }
         };
       });
     }

@@ -816,7 +816,7 @@ th.sortable.active-sort .sort-icon { opacity: 1; color: var(--primary); font-wei
 .rows-per-page-select { min-height: 32px; padding: 2px 8px; font-size: 12px; width: auto; border-radius: 6px; }
 
 /* Dashboard Receivables & Payables Notification Center */
-.due-notifications-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.due-notifications-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
 @media (max-width: 900px) { .due-notifications-container { grid-template-columns: 1fr; } }
 .due-alert-card { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
 .due-alert-card.receivables { border-left: 5px solid var(--primary); }

@@ -1357,7 +1357,7 @@ route('POST', '/api/purchases', async (req, res) => {
       if (paid > total) paid = total;
 
       let supplier_id = b.supplier_id ? Number(b.supplier_id) : null;
-      let supplier_name = str(b.supplier_name);
+      let supplier_name = str(b.supplier_name) || (supplier_id ? '' : 'Cash Supplier');
       if (supplier_id) {
         const s = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(supplier_id);
         if (!s) throw new Error('Supplier not found');
