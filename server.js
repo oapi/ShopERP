@@ -315,9 +315,11 @@ route('POST', '/api/auth/login', async (req, res) => {
   const password = str(b.password);
   if (!username || !password) return err(res, 400, 'Username and password are required');
 
-  const hashed = hashPassword(password);
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE username = ? AND password_hash = ? AND active = 1').get(username, hashed);
+  const user = db.prepare('SELECT id, username, name, role, salt, password_hash FROM users WHERE username = ? AND active = 1').get(username);
   if (!user) return err(res, 401, 'Invalid username or password');
+
+  const hashed = hashPassword(password, user.salt);
+  if (hashed !== user.password_hash) return err(res, 401, 'Invalid username or password');
 
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?,?)').run(token, user.id);
