@@ -183,6 +183,14 @@ CREATE INDEX IF NOT EXISTS idx_acct_trx_acct ON account_transactions(account_id)
 
 // Migration helpers for optional columns in case table existed earlier
 function addColumnIfNotExists(table, colDef) {
+  if (!/^[a-zA-Z0-9_]+$/.test(table)) {
+    throw new Error('Invalid table name format');
+  }
+  // Allow letters, numbers, spaces, underscores, parentheses, quotes, dots, and commas for valid SQL syntax.
+  // We still block semicolons to prevent query stacking and double dashes to prevent comment injection.
+  if (!/^[a-zA-Z0-9_\s()'.\-,]+$/.test(colDef)) {
+    throw new Error('Invalid column definition format');
+  }
   try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${colDef}`); } catch (e) {}
 }
 addColumnIfNotExists('sales', 'account_id INTEGER REFERENCES accounts(id)');
