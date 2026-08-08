@@ -893,11 +893,8 @@
   // ==========================================
   // 1. DASHBOARD VIEW
   // ==========================================
-  async function renderDashboard(container) {
-    const data = await api('/api/dashboard');
-
-    container.innerHTML =
-      '<div class="page-head">' +
+  function renderDashboardHeaderHTML(data) {
+    return '<div class="page-head">' +
       '<div>' +
       '<div class="page-title">Dashboard</div>' +
       '<div class="page-sub">Overview of Today (' + data.date + ')</div>' +
@@ -908,9 +905,11 @@
       '<button class="btn secondary" id="btn-quick-payment">💳 Add Payment</button>' +
       '<button class="btn secondary" id="btn-quick-expense">💸 Add Expense</button>' +
       '</div>' +
-      '</div>' +
+      '</div>';
+  }
 
-      '<div class="stat-grid">' +
+  function renderDashboardTodayStatsHTML(data) {
+    return '<div class="stat-grid">' +
       '<div class="stat blue">' +
       '<div class="label">Today Sales</div>' +
       '<div class="value">' + fmtTk(data.today.sales_total) + '</div>' +
@@ -931,9 +930,11 @@
       '<div class="value" style="font-size:18px;">+' + fmtTk(data.today.cash_in) + ' / -' + fmtTk(data.today.cash_out) + '</div>' +
       '<div class="sub">Net Flow: ' + fmtTk(data.today.cash_in - data.today.cash_out) + '</div>' +
       '</div>' +
-      '</div>' +
+      '</div>';
+  }
 
-      '<div class="stat-grid">' +
+  function renderDashboardTotalStatsHTML(data) {
+    return '<div class="stat-grid">' +
       '<div class="stat amber">' +
       '<div class="label">Total Customer Due</div>' +
       '<div class="value">' + fmtTk(data.customer_due_total) + '</div>' +
@@ -954,10 +955,11 @@
       '<div class="value">' + fmtTk(data.stock_value) + '</div>' +
       '<div class="sub">Inventory at purchase cost</div>' +
       '</div>' +
-      '</div>' +
+      '</div>';
+  }
 
-      '<div class="grid-2">' +
-      '<div class="card">' +
+  function renderDashboardLowStockHTML(data) {
+    return '<div class="card">' +
       '<div class="card-head">' +
       '<span>⚠️ Low Stock Alerts (' + data.low_stock.length + ')</span>' +
       '<button class="btn sm secondary" id="btn-manage-stock">Manage Stock</button>' +
@@ -976,9 +978,11 @@
         '</tbody></table>'
       ) +
       '</div>' +
-      '</div>' +
+      '</div>';
+  }
 
-      '<div class="card">' +
+  function renderDashboardRecentSalesHTML(data) {
+    return '<div class="card">' +
       '<div class="card-head">' +
       '<span>📑 Recent Sales</span>' +
       '<button class="btn sm secondary" id="btn-all-sales">View All Sales</button>' +
@@ -998,11 +1002,11 @@
         '</tbody></table>'
       ) +
       '</div>' +
-      '</div>' +
-      '</div>' +
+      '</div>';
+  }
 
-      // Receivables & Payables Notification Center Widget (at bottom)
-      '<div class="due-notifications-container">' +
+  function renderDashboardDueNotificationsHTML(data) {
+    return '<div class="due-notifications-container">' +
       '<div class="due-alert-card receivables">' +
       '<div class="due-card-header">' +
       '<div class="due-card-title">💵 Overdue Receivables (Customer Dues)</div>' +
@@ -1057,7 +1061,9 @@
       '</div>' +
       '</div>' +
       '</div>';
+  }
 
+  function attachDashboardEvents(container) {
     const quickSale = $('#btn-quick-sale');
     if (quickSale) quickSale.onclick = () => switchView('pos');
 
@@ -1092,6 +1098,22 @@
     $$('.btn-make-pay').forEach(b => {
       b.onclick = () => openPaymentModal('supplier', Number(b.dataset.id), b.dataset.name, () => renderDashboard(container));
     });
+  }
+
+  async function renderDashboard(container) {
+    const data = await api('/api/dashboard');
+
+    container.innerHTML =
+      renderDashboardHeaderHTML(data) +
+      renderDashboardTodayStatsHTML(data) +
+      renderDashboardTotalStatsHTML(data) +
+      '<div class="grid-2">' +
+      renderDashboardLowStockHTML(data) +
+      renderDashboardRecentSalesHTML(data) +
+      '</div>' +
+      renderDashboardDueNotificationsHTML(data);
+
+    attachDashboardEvents(container);
   }
 
   // ==========================================
