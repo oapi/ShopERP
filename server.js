@@ -1342,8 +1342,13 @@ route('POST', '/api/purchases', async (req, res) => {
   try {
     const purchase = transaction(() => {
       let total = 0;
+      const productIds = items.map(it => it.product_id);
+      const productsQuery = db.prepare('SELECT * FROM products WHERE id IN (SELECT value FROM json_each(?))');
+      const productsList = productsQuery.all(JSON.stringify(productIds));
+      const productsMap = new Map(productsList.map(p => [p.id, p]));
+
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = productsMap.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
