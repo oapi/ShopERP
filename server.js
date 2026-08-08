@@ -464,7 +464,11 @@ route('POST', '/api/system/restore', async (req, res) => {
         try {
           const rows = sourceDb.prepare(`SELECT * FROM ${t}`).all();
           if (!rows || rows.length === 0) continue;
-          const cols = Object.keys(rows[0]);
+          const tableInfo = db.prepare(`PRAGMA table_info(${t})`).all();
+          const validCols = tableInfo.map(c => c.name);
+          const rawCols = Object.keys(rows[0]);
+          const cols = rawCols.filter(c => validCols.includes(c));
+          if (cols.length === 0) continue;
           const placeholders = cols.map(() => '?').join(',');
           const ins = db.prepare(`INSERT INTO ${t} (${cols.join(',')}) VALUES (${placeholders})`);
           for (const r of rows) {
