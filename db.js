@@ -195,8 +195,29 @@ addColumnIfNotExists('expenses', 'account_id INTEGER REFERENCES accounts(id)');
 addColumnIfNotExists('expenses', 'created_by INTEGER REFERENCES users(id)');
 
 // Password hashing helper
-function hashPassword(pwd) {
-  return crypto.createHash('sha256').update(pwd + 'islam_enterprise_salt').digest('hex');
+function hashPassword(pwd, salt) {
+  salt = salt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.createHash('sha256').update(pwd + salt).digest('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(pwd, storedHash) {
+  if (!storedHash) return false;
+  if (storedHash.includes(':')) {
+    const [salt, hash] = storedHash.split(':');
+    const computed = hashPassword(pwd, salt);
+    try {
+      return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(storedHash));
+    } catch {
+      return false;
+    }
+  }
+  const legacyHash = crypto.createHash('sha256').update(pwd + 'islam_enterprise_salt').digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(legacyHash), Buffer.from(storedHash));
+  } catch {
+    return false;
+  }
 }
 
 // Seed Users
@@ -254,4 +275,5 @@ for (const [k, v] of defaultSettings) {
 module.exports = {
   db,
   hashPassword,
+  verifyPassword,
 };
