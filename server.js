@@ -3,7 +3,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { db, hashPassword } = require('./db');
+const { db, hashPassword, verifyPassword } = require('./db');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -315,9 +315,14 @@ route('POST', '/api/auth/login', async (req, res) => {
   const password = str(b.password);
   if (!username || !password) return err(res, 400, 'Username and password are required');
 
-  const hashed = hashPassword(password);
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE username = ? AND password_hash = ? AND active = 1').get(username, hashed);
+  const user = db.prepare('SELECT id, username, name, role, password_hash FROM users WHERE username = ? AND active = 1').get(username);
   if (!user) return err(res, 401, 'Invalid username or password');
+
+  if (!verifyPassword(password, user.password_hash)) {
+    return err(res, 401, 'Invalid username or password');
+  }
+
+  delete user.password_hash;
 
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?,?)').run(token, user.id);
