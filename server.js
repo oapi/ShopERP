@@ -423,8 +423,8 @@ route('POST', '/api/system/restore', async (req, res) => {
       return err(res, 400, 'Invalid file format: Not a valid SQLite database (.db)');
     }
 
-    const dbPath = path.join(__dirname, 'data', 'shop.db');
-    const tmpPath = path.join(__dirname, 'data', 'shop.db.restore_tmp');
+    const dbPath = process.env.TEST_DB_PATH || path.join(__dirname, 'data', 'shop.db');
+    const tmpPath = dbPath + '.restore_tmp';
     fs.writeFileSync(tmpPath, buffer);
 
     const { DatabaseSync } = require('node:sqlite');
@@ -1768,10 +1768,14 @@ function startServer(portToTry) {
     console.log('-----------------------------------------------------------------');
     console.log(`  🚀 Portable System Ready!`);
     console.log(`  🌐 Web Address: http://localhost:${portToTry}`);
-    console.log(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
+    console.log(`  💾 Database:   ${process.env.TEST_DB_PATH || path.join(__dirname, 'data', 'shop.db')}`);
     console.log('=================================================================');
   });
 }
 
-startServer(PORT);
+if (require.main === module) {
+  startServer(PORT);
+}
+
+Object.assign(module.exports, { server });
 
