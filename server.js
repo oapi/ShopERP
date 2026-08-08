@@ -300,6 +300,22 @@ function queryPaginated(q, {
   };
 }
 
+// Pre-compiled queries for performance
+const dashboardTotalCapitalStmt = db.prepare(`
+  SELECT
+    (SELECT COALESCE(SUM(opening_balance), 0) FROM accounts WHERE active = 1)
+    +
+    (SELECT COALESCE(SUM(
+      CASE
+        WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount
+        WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN -amount
+        WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN amount
+        WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN -amount
+        ELSE 0
+      END
+    ), 0) FROM account_transactions WHERE account_id IN (SELECT id FROM accounts WHERE active = 1)) AS total
+`);
+
 // ---------- API handlers ----------
 const routes = [];
 function route(method, pattern, handler) {
@@ -1660,9 +1676,7 @@ route('GET', '/api/dashboard', (req, res) => {
   const stockValue = db.prepare('SELECT COALESCE(SUM(stock_qty * purchase_price),0) AS v FROM products WHERE active=1').get().v;
   const recentSales = db.prepare('SELECT id, invoice_no, customer_name, date, total, paid, (total-paid) AS due FROM sales ORDER BY id DESC LIMIT 8').all();
 
-  const accounts = db.prepare('SELECT id FROM accounts WHERE active=1').all();
-  let totalCapital = 0;
-  for (const a of accounts) totalCapital += accountBalance(a.id);
+  const totalCapital = dashboardTotalCapitalStmt.get().total;
 
   json(res, 200, {
     date: t,
