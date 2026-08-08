@@ -1105,20 +1105,22 @@ route('GET', '/api/customers/:id/ledger', (req, res, p) => {
 route('GET', '/api/suppliers', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
   const allowedSortCols = {
-    name: 'name', phone: 'phone', address: 'address', id: 'id'
+    name: 's.name', phone: 's.phone', address: 's.address', id: 's.id'
   };
   const result = queryPaginated(q, {
-    fromSql: 'suppliers',
-    selectCols: '*',
+    fromSql: 'suppliers s',
+    selectCols: `s.*, ROUND(
+      (SELECT COALESCE(SUM(total - paid), 0) FROM purchases WHERE supplier_id = s.id) -
+      (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE party_type = 'supplier' AND party_id = s.id),
+    2) AS balance`,
     allowedSortCols,
     defaultSortCol: 'name',
     defaultSortDir: 'ASC',
-    searchCols: ['name', 'phone', 'address'],
+    searchCols: ['s.name', 's.phone', 's.address'],
     buildWhere: (clauses, args) => {
-      clauses.push('active = 1');
+      clauses.push('s.active = 1');
     }
   });
-  for (const s of result.data) s.balance = supplierBalance(s.id);
   json(res, 200, result);
 });
 
