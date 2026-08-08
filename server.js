@@ -841,10 +841,32 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
 });
 
 // ---- Accounts & Cash Management ----
+const getAccountsWithBalanceStmt = db.prepare(`
+  SELECT
+    a.*,
+    ROUND(
+      a.opening_balance + COALESCE((
+        SELECT SUM(
+          CASE
+            WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount
+            WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN -amount
+            WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN amount
+            WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN -amount
+            ELSE 0
+          END
+        )
+        FROM account_transactions
+        WHERE account_id = a.id
+      ), 0),
+    2) AS current_balance
+  FROM accounts a
+  WHERE a.active = 1
+  ORDER BY a.id
+`);
+
 route('GET', '/api/accounts', (req, res) => {
   if (!requireAuth(req, res)) return;
-  const rows = db.prepare('SELECT * FROM accounts WHERE active = 1 ORDER BY id').all();
-  for (const a of rows) a.current_balance = accountBalance(a.id);
+  const rows = getAccountsWithBalanceStmt.all();
   json(res, 200, rows);
 });
 
