@@ -461,18 +461,7 @@ route('POST', '/api/system/restore', async (req, res) => {
 
       const tables = ['users', 'sessions', 'accounts', 'account_transactions', 'products', 'customers', 'suppliers', 'sales', 'sale_items', 'purchases', 'purchase_items', 'payments', 'expenses', 'settings'];
       for (const t of tables) {
-        try {
-          const rows = sourceDb.prepare(`SELECT * FROM ${t}`).all();
-          if (!rows || rows.length === 0) continue;
-          const cols = Object.keys(rows[0]);
-          const placeholders = cols.map(() => '?').join(',');
-          const ins = db.prepare(`INSERT INTO ${t} (${cols.join(',')}) VALUES (${placeholders})`);
-          for (const r of rows) {
-            ins.run(...cols.map(c => r[c]));
-          }
-        } catch (e) {
-          // Skip if optional table
-        }
+        restoreTableData(t, sourceDb, db);
       }
     });
 
@@ -1749,6 +1738,30 @@ const server = http.createServer(async (req, res) => {
     err(res, 500, e.message || 'Server error');
   }
 });
+
+function restoreTableData(tableName, sourceDb, destDb) {
+  try {
+    const rows = sourceDb.prepare(`SELECT * FROM ${tableName}`).all();
+    if (!rows || rows.length === 0) return;
+
+    const tableInfo = destDb.prepare(`PRAGMA table_info(${tableName})`).all();
+    const validCols = new Set(tableInfo.map(info => info.name));
+
+    const sourceCols = Object.keys(rows[0]);
+    const cols = sourceCols.filter(col => validCols.has(col));
+
+    if (cols.length === 0) return;
+
+    const placeholders = cols.map(() => '?').join(',');
+    const ins = destDb.prepare(`INSERT INTO ${tableName} (${cols.join(',')}) VALUES (${placeholders})`);
+
+    for (const r of rows) {
+      ins.run(...cols.map(c => r[c]));
+    }
+  } catch (e) {
+    // Skip if optional table
+  }
+}
 
 function startServer(portToTry) {
   server.removeAllListeners('error');
