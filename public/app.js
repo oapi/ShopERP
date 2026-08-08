@@ -1097,21 +1097,9 @@
   // ==========================================
   // 2. POS / NEW SALE VIEW
   // ==========================================
-  async function renderPOS(container) {
-    const [productsRes, customersRes, accounts] = await Promise.all([
-      api('/api/products?limit=1000'),
-      api('/api/customers?limit=1000'),
-      api('/api/accounts'),
-    ]);
-    const products = Array.isArray(productsRes) ? productsRes : (productsRes.data || []);
-    const customers = Array.isArray(customersRes) ? customersRes : (customersRes.data || []);
-    state.products = products;
-    state.customers = customers;
-    state.accounts = accounts;
 
-    const curSym = (state.settings && state.settings.currency_symbol) || '৳';
-
-    container.innerHTML =
+  function getPOSHTML(products, customers, accounts, curSym) {
+    return (
       '<div class="page-head">' +
       '<div>' +
       '<div class="page-title">New Sale (POS)</div>' +
@@ -1225,79 +1213,82 @@
       '<button class="btn lg" id="btn-pos-submit" style="width:100%; margin-top:14px;">✅ Complete &amp; Print Invoice</button>' +
       '</div>' +
       '</div>' +
-      '</div>';
+      '</div>'
+    );
+  }
 
-    function updatePOSCartUI() {
-      const tbody = $('#pos-cart-tbody');
-      if (!tbody) return;
+  function updatePOSCartUI() {
+    const tbody = $('#pos-cart-tbody');
+    if (!tbody) return;
 
-      if (state.posCart.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">No items added to cart yet. Select a product above.</td></tr>';
-      } else {
-        tbody.innerHTML = state.posCart.map((item, idx) =>
-          '<tr>' +
-          '<td><strong>' + item.name + '</strong><div class="txt-muted" style="font-size:11px;">' + (item.brand ? item.brand + ' ' : '') + (item.size || '') + '</div></td>' +
-          '<td><input type="number" min="0.01" step="any" class="pos-cart-qty" data-idx="' + idx + '" value="' + item.qty + '"></td>' +
-          '<td><span class="txt-muted">' + item.unit + '</span></td>' +
-          '<td class="num"><input type="number" min="0" step="any" class="pos-cart-price num" data-idx="' + idx + '" value="' + item.unit_price + '"></td>' +
-          '<td class="num"><strong>' + fmtTk(item.qty * item.unit_price) + '</strong></td>' +
-          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '">&times;</button></td>' +
-          '</tr>'
-        ).join('');
-      }
-
-      let subtotal = 0;
-      state.posCart.forEach(it => { subtotal += (it.qty * it.unit_price); });
-      subtotal = Math.round(subtotal * 100) / 100;
-
-      const discountInp = $('#pos-discount');
-      const discount = Math.min(Number(discountInp ? discountInp.value : 0) || 0, subtotal);
-      const total = Math.round((subtotal - discount) * 100) / 100;
-
-      const paidInp = $('#pos-paid');
-      let paid = Number(paidInp ? paidInp.value : 0) || 0;
-      const due = Math.max(0, Math.round((total - paid) * 100) / 100);
-
-      const subEl = $('#pos-subtotal-val');
-      if (subEl) subEl.textContent = fmtTk(subtotal);
-
-      const totEl = $('#pos-total-val');
-      if (totEl) totEl.textContent = fmtTk(total);
-
-      const dueEl = $('#pos-due-val');
-      if (dueEl) {
-        dueEl.textContent = fmtTk(due);
-        dueEl.className = 'pos-due ' + (due > 0 ? 'txt-red' : 'txt-green');
-      }
-
-      $$('.pos-cart-qty').forEach(inp => {
-        inp.onchange = (e) => {
-          const idx = Number(e.target.dataset.idx);
-          const newQty = Math.max(0.01, Number(e.target.value) || 1);
-          state.posCart[idx].qty = newQty;
-          updatePOSCartUI();
-          savePOSState();
-        };
-      });
-      $$('.pos-cart-price').forEach(inp => {
-        inp.onchange = (e) => {
-          const idx = Number(e.target.dataset.idx);
-          const newPrice = Math.max(0, Number(e.target.value) || 0);
-          state.posCart[idx].unit_price = newPrice;
-          updatePOSCartUI();
-          savePOSState();
-        };
-      });
-      $$('.btn-pos-remove').forEach(btn => {
-        btn.onclick = () => {
-          const idx = Number(btn.dataset.idx);
-          state.posCart.splice(idx, 1);
-          updatePOSCartUI();
-          savePOSState();
-        };
-      });
+    if (state.posCart.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No items added to cart yet. Select a product above.</td></tr>';
+    } else {
+      tbody.innerHTML = state.posCart.map((item, idx) =>
+        '<tr>' +
+        '<td><strong>' + item.name + '</strong><div class="txt-muted" style="font-size:11px;">' + (item.brand ? item.brand + ' ' : '') + (item.size || '') + '</div></td>' +
+        '<td><input type="number" min="0.01" step="any" class="pos-cart-qty" data-idx="' + idx + '" value="' + item.qty + '"></td>' +
+        '<td><span class="txt-muted">' + item.unit + '</span></td>' +
+        '<td class="num"><input type="number" min="0" step="any" class="pos-cart-price num" data-idx="' + idx + '" value="' + item.unit_price + '"></td>' +
+        '<td class="num"><strong>' + fmtTk(item.qty * item.unit_price) + '</strong></td>' +
+        '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '">&times;</button></td>' +
+        '</tr>'
+      ).join('');
     }
 
+    let subtotal = 0;
+    state.posCart.forEach(it => { subtotal += (it.qty * it.unit_price); });
+    subtotal = Math.round(subtotal * 100) / 100;
+
+    const discountInp = $('#pos-discount');
+    const discount = Math.min(Number(discountInp ? discountInp.value : 0) || 0, subtotal);
+    const total = Math.round((subtotal - discount) * 100) / 100;
+
+    const paidInp = $('#pos-paid');
+    let paid = Number(paidInp ? paidInp.value : 0) || 0;
+    const due = Math.max(0, Math.round((total - paid) * 100) / 100);
+
+    const subEl = $('#pos-subtotal-val');
+    if (subEl) subEl.textContent = fmtTk(subtotal);
+
+    const totEl = $('#pos-total-val');
+    if (totEl) totEl.textContent = fmtTk(total);
+
+    const dueEl = $('#pos-due-val');
+    if (dueEl) {
+      dueEl.textContent = fmtTk(due);
+      dueEl.className = 'pos-due ' + (due > 0 ? 'txt-red' : 'txt-green');
+    }
+
+    $$('.pos-cart-qty').forEach(inp => {
+      inp.onchange = (e) => {
+        const idx = Number(e.target.dataset.idx);
+        const newQty = Math.max(0.01, Number(e.target.value) || 1);
+        state.posCart[idx].qty = newQty;
+        updatePOSCartUI();
+        savePOSState();
+      };
+    });
+    $$('.pos-cart-price').forEach(inp => {
+      inp.onchange = (e) => {
+        const idx = Number(e.target.dataset.idx);
+        const newPrice = Math.max(0, Number(e.target.value) || 0);
+        state.posCart[idx].unit_price = newPrice;
+        updatePOSCartUI();
+        savePOSState();
+      };
+    });
+    $$('.btn-pos-remove').forEach(btn => {
+      btn.onclick = () => {
+        const idx = Number(btn.dataset.idx);
+        state.posCart.splice(idx, 1);
+        updatePOSCartUI();
+        savePOSState();
+      };
+    });
+  }
+
+  function bindPOSEvents(container) {
     const addItemBtn = $('#btn-pos-add-item');
     if (addItemBtn) {
       addItemBtn.onclick = () => {
@@ -1471,8 +1462,26 @@
         }
       };
     }
+  }
+
+  async function renderPOS(container) {
+    const [productsRes, customersRes, accounts] = await Promise.all([
+      api('/api/products?limit=1000'),
+      api('/api/customers?limit=1000'),
+      api('/api/accounts'),
+    ]);
+    const products = Array.isArray(productsRes) ? productsRes : (productsRes.data || []);
+    const customers = Array.isArray(customersRes) ? customersRes : (customersRes.data || []);
+    state.products = products;
+    state.customers = customers;
+    state.accounts = accounts;
+
+    const curSym = (state.settings && state.settings.currency_symbol) || '৳';
+
+    container.innerHTML = getPOSHTML(products, customers, accounts, curSym);
 
     updatePOSCartUI();
+    bindPOSEvents(container);
   }
 
   // ==========================================
