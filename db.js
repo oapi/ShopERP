@@ -7,7 +7,8 @@ const crypto = require('node:crypto');
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const db = new DatabaseSync(path.join(DATA_DIR, 'shop.db'));
+const dbPath = process.env.TEST_DB_PATH || path.join(DATA_DIR, 'shop.db');
+const db = new DatabaseSync(dbPath);
 
 db.exec(`
 PRAGMA journal_mode = WAL;
