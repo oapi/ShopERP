@@ -1768,7 +1768,6 @@ function startServer(portToTry) {
     console.log('-----------------------------------------------------------------');
     console.log(`  🚀 Portable System Ready!`);
     console.log(`  🌐 Web Address: http://localhost:${portToTry}`);
-    console.log(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
     console.log('=================================================================');
   });
 }
