@@ -180,48 +180,53 @@ function requireAdmin(req, res) {
 }
 
 // Balance helpers
+const _customerDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const _customerPymtStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
-  return Math.round((s - p) * 100) / 100;
-}
-function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = _customerDueStmt.get(id).due;
+  const p = _customerPymtStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
+const _supplierDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const _supplierPymtStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
+function supplierBalance(id) {
+  const s = _supplierDueStmt.get(id).due;
+  const p = _supplierPymtStmt.get(id).amt;
+  return Math.round((s - p) * 100) / 100;
+}
+
+const _acctOpenBalStmt = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?');
+const _acctInflowStmt = db.prepare(`
+  SELECT COALESCE(SUM(amount),0) AS total
+  FROM account_transactions
+  WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
+`);
+const _acctOutflowStmt = db.prepare(`
+  SELECT COALESCE(SUM(amount),0) AS total
+  FROM account_transactions
+  WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
+`);
+const _acctPymtCustStmt = db.prepare(`
+  SELECT COALESCE(SUM(amount),0) AS total
+  FROM account_transactions
+  WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
+    AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
+`);
+const _acctPymtSuppStmt = db.prepare(`
+  SELECT COALESCE(SUM(amount),0) AS total
+  FROM account_transactions
+  WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
+    AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
+`);
 function accountBalance(acctId) {
-  const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
+  const acct = _acctOpenBalStmt.get(acctId);
   if (!acct) return 0;
   const openBal = acct.opening_balance;
-
-  const inflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
-
-  const outflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
-
+  const inflow = _acctInflowStmt.get(acctId).total;
+  const outflow = _acctOutflowStmt.get(acctId).total;
+  const pymtCust = _acctPymtCustStmt.get(acctId).total;
+  const pymtSupp = _acctPymtSuppStmt.get(acctId).total;
   const net = openBal + inflow + pymtCust - outflow - pymtSupp;
   return Math.round(net * 100) / 100;
 }
