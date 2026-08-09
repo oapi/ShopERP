@@ -77,6 +77,20 @@ a,
   touch-action: manipulation;
 }
 
+button,
+a {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+.nav-btn:focus-visible,
+.btn:focus-visible,
+.menu-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 button {
   font-family: inherit;
   cursor: pointer;
