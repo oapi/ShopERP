@@ -1,0 +1,3 @@
+## 2024-05-19 - Improved Screen Reader and Keyboard Navigation
+**Learning:** Found multiple icon-only buttons (like `&times;` close buttons) lacking `aria-label`s, which causes screen readers to read generic or confusing text. Additionally, interactive elements lacked global `:focus-visible` styles, making keyboard navigation difficult to track visually.
+**Action:** Always verify that buttons containing only icons or symbols have descriptive `aria-label` attributes. Ensure a global `:focus-visible` style is present for all interactive elements to support keyboard users without compromising mouse user experience (where normal focus outlines are sometimes suppressed).
