@@ -1,0 +1,4 @@
+## 2024-08-11 - Path Traversal via startsWith Check
+**Vulnerability:** The static file server in `server.js` used `filePath.startsWith(PUBLIC_DIR)` to verify if requested files were within the public directory. This allowed accessing files in sibling directories sharing the same prefix (e.g., if PUBLIC_DIR is `/app/public`, an attacker could request `/app/public-secret/config.json` because it starts with `/app/public`).
+**Learning:** `String.prototype.startsWith` is fundamentally insecure for path validation because it performs a pure string comparison without respecting path boundaries or resolving relative segments properly.
+**Prevention:** Always use `path.relative(baseDir, targetPath)` to determine if a path is inside a directory. Verify that the returned relative path does not equal `..`, does not start with `..` + `path.sep`, and is not an absolute path (`path.isAbsolute(relative)`).
