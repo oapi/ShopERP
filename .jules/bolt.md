@@ -1,0 +1,3 @@
+## 2024-05-24 - Precompiled queries for balance functions
+**Learning:** Calling multiple `db.prepare()` statements inside loops for common balance computations (`accountBalance`, `customerBalance`, `supplierBalance`) caused significant N+1 and compilation overhead (up to ~1.7s for 1000 items in tests). Consolidating the balance calculations into single scalar SQL queries (`ROUND(opening + COALESCE((...)) - COALESCE((...)))`) and moving `db.prepare()` to the module scope eliminated both query loops and recompilation overhead.
+**Action:** When performing aggregate math across multiple tables inside a javascript loop using `node:sqlite`, consolidate the queries into a single SQL statement with subqueries, and precompile using `db.prepare()` outside the function body.
