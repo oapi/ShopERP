@@ -1,0 +1,3 @@
+## 2024-11-20 - Accessible Icon-Only Buttons
+**Learning:** Icon-only buttons using HTML entities like `&times;` (×) are read literally by screen readers (e.g., "times" or "multiplication"), causing confusion for visually impaired users.
+**Action:** Always add explicit `aria-label` attributes to icon-only buttons to provide a meaningful accessible name, and include `title` attributes for tooltips to assist mouse users.
