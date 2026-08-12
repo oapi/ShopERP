@@ -1,0 +1,3 @@
+## YYYY-MM-DD - [Optimize Database Queries in Balance Helpers]
+**Learning:** In native `node:sqlite`, using `db.prepare()` directly inside frequently called functions (like helpers called inside loops over paginated results) introduces severe compilation overhead because SQLite has to parse and compile the SQL query on every single invocation.
+**Action:** Extract `db.prepare()` calls to the module level and assign them to constant variables, then call `.get(...)` or `.all(...)` on those pre-compiled statements within the functions. This ensures queries are compiled only once during application startup.
