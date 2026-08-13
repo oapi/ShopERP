@@ -316,8 +316,16 @@ route('POST', '/api/auth/login', async (req, res) => {
   if (!username || !password) return err(res, 400, 'Username and password are required');
 
   const hashed = hashPassword(password);
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE username = ? AND password_hash = ? AND active = 1').get(username, hashed);
+  const user = db.prepare('SELECT id, username, name, role, password_hash FROM users WHERE username = ? AND active = 1').get(username);
   if (!user) return err(res, 401, 'Invalid username or password');
+
+  const userHashBuf = Buffer.from(user.password_hash, 'hex');
+  const hashedBuf = Buffer.from(hashed, 'hex');
+  if (userHashBuf.length !== hashedBuf.length || !crypto.timingSafeEqual(userHashBuf, hashedBuf)) {
+    return err(res, 401, 'Invalid username or password');
+  }
+
+  delete user.password_hash;
 
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?,?)').run(token, user.id);
