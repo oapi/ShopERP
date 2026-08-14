@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility and Tooltips for Icon-only Buttons
+**Learning:** Dynamically generated HTML containing icon-only buttons (like `&times;` or pagination arrows) frequently lack both `aria-label` attributes (for screen readers) and `title` attributes (for tooltips on hover). While some static buttons had `aria-label`s, they were missing the visual `title` tooltip.
+**Action:** When adding or reviewing icon-only buttons (especially those dynamically generated in string templates or using HTML entities), always ensure they are given both an `aria-label` for screen reader accessibility and a matching `title` attribute for visual hover tooltips to provide a complete UX.
