@@ -1,0 +1,3 @@
+## 2024-06-25 - N+1 Queries in paginated lists
+**Learning:** In the CoreTrade ERP architecture, paginated APIs (like `/api/customers`) previously used JavaScript `for` loops on returned rows to call independent db queries (e.g. `customerBalance(c.id)`), resulting in O(N+1) database calls per request. Because SQLite limits concurrency, running hundreds of queries in JS limits request throughput.
+**Action:** Replace JavaScript looping with inline subqueries passed via the `selectCols` property in `queryPaginated`. Embedding `(SELECT ...)` directly inside `selectCols` allows SQLite to evaluate the related fields native to the single query, avoiding the N+1 latency loop.
