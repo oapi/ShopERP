@@ -1032,7 +1032,12 @@ route('GET', '/api/customers', (req, res, params, q) => {
   };
   const result = queryPaginated(q, {
     fromSql: 'customers',
-    selectCols: '*',
+    selectCols: `*,
+      ROUND(
+        COALESCE((SELECT SUM(total - paid) FROM sales WHERE customer_id = customers.id), 0) -
+        COALESCE((SELECT SUM(amount) FROM payments WHERE party_type='customer' AND party_id = customers.id), 0),
+        2
+      ) AS balance`,
     allowedSortCols,
     defaultSortCol: 'name',
     defaultSortDir: 'ASC',
@@ -1045,7 +1050,6 @@ route('GET', '/api/customers', (req, res, params, q) => {
       }
     }
   });
-  for (const c of result.data) c.balance = customerBalance(c.id);
   json(res, 200, result);
 });
 
@@ -1109,7 +1113,12 @@ route('GET', '/api/suppliers', (req, res, params, q) => {
   };
   const result = queryPaginated(q, {
     fromSql: 'suppliers',
-    selectCols: '*',
+    selectCols: `*,
+      ROUND(
+        COALESCE((SELECT SUM(total - paid) FROM purchases WHERE supplier_id = suppliers.id), 0) -
+        COALESCE((SELECT SUM(amount) FROM payments WHERE party_type='supplier' AND party_id = suppliers.id), 0),
+        2
+      ) AS balance`,
     allowedSortCols,
     defaultSortCol: 'name',
     defaultSortDir: 'ASC',
@@ -1118,7 +1127,6 @@ route('GET', '/api/suppliers', (req, res, params, q) => {
       clauses.push('active = 1');
     }
   });
-  for (const s of result.data) s.balance = supplierBalance(s.id);
   json(res, 200, result);
 });
 
@@ -1422,7 +1430,14 @@ route('GET', '/api/payments', (req, res, params, q) => {
   };
   const result = queryPaginated(q, {
     fromSql: 'payments',
-    selectCols: '*',
+    selectCols: `*,
+      COALESCE(
+        CASE
+          WHEN party_type = 'customer' THEN (SELECT name FROM customers WHERE id = payments.party_id)
+          WHEN party_type = 'supplier' THEN (SELECT name FROM suppliers WHERE id = payments.party_id)
+        END,
+        '#' || party_id
+      ) AS party_name`,
     allowedSortCols,
     defaultSortCol: 'date',
     defaultSortDir: 'DESC',
@@ -1434,12 +1449,6 @@ route('GET', '/api/payments', (req, res, params, q) => {
       if (q.get('to')) { clauses.push('date <= ?'); args.push(q.get('to')); }
     }
   });
-  const cn = db.prepare('SELECT name FROM customers WHERE id = ?');
-  const sn = db.prepare('SELECT name FROM suppliers WHERE id = ?');
-  for (const r of result.data) {
-    const rec = r.party_type === 'customer' ? cn.get(r.party_id) : sn.get(r.party_id);
-    r.party_name = rec ? rec.name : '#' + r.party_id;
-  }
   json(res, 200, result);
 });
 
