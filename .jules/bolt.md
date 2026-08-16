@@ -1,0 +1,3 @@
+## 2024-08-16 - Bulk Entity Delete Optimization via json_each
+**Learning:** In Node's native `node:sqlite`, bypassing limits with dynamic IN clauses (especially for arrays dynamically generated in bulk operation endpoints) using the `IN (SELECT value FROM json_each(?))` pattern allows executing multi-row deletions and dependent aggregations (like stock level recalcs) efficiently with O(1) queries instead of looping O(N) operations.
+**Action:** When performing bulk DB operations containing array inputs, instead of looping single row updates/deletes from Javascript, map the parameters to a JSON string array and process entirely in the database via `json_each` to avoid heavy N+1 query performance bottlenecks.
