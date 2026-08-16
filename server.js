@@ -1555,53 +1555,58 @@ route('POST', '/api/bulk-delete/:entity', async (req, res, p) => {
   try {
     let deletedCount = 0;
     transaction(() => {
+      const idsJson = JSON.stringify(ids);
       if (entity === 'products') {
-        const stmt = db.prepare('UPDATE products SET active = 0 WHERE id = ?');
-        for (const id of ids) { stmt.run(id); deletedCount++; }
+        db.prepare('UPDATE products SET active = 0 WHERE id IN (SELECT value FROM json_each(?))').run(idsJson);
+        deletedCount = ids.length;
       } else if (entity === 'customers') {
-        const stmt = db.prepare('UPDATE customers SET active = 0 WHERE id = ?');
-        for (const id of ids) { stmt.run(id); deletedCount++; }
+        db.prepare('UPDATE customers SET active = 0 WHERE id IN (SELECT value FROM json_each(?))').run(idsJson);
+        deletedCount = ids.length;
       } else if (entity === 'suppliers') {
-        const stmt = db.prepare('UPDATE suppliers SET active = 0 WHERE id = ?');
-        for (const id of ids) { stmt.run(id); deletedCount++; }
+        db.prepare('UPDATE suppliers SET active = 0 WHERE id IN (SELECT value FROM json_each(?))').run(idsJson);
+        deletedCount = ids.length;
       } else if (entity === 'expenses') {
-        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'expense' AND ref_id = ?");
-        const delExp = db.prepare('DELETE FROM expenses WHERE id = ?');
-        for (const id of ids) {
-          delTx.run(id);
-          delExp.run(id);
-          deletedCount++;
-        }
+        db.prepare("DELETE FROM account_transactions WHERE ref_type = 'expense' AND ref_id IN (SELECT value FROM json_each(?))").run(idsJson);
+        db.prepare("DELETE FROM expenses WHERE id IN (SELECT value FROM json_each(?))").run(idsJson);
+        deletedCount = ids.length;
       } else if (entity === 'sales') {
-        const getItems = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?');
-        const incStock = db.prepare('UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?');
-        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'sale' AND ref_id = ?");
-        const delItems = db.prepare('DELETE FROM sale_items WHERE sale_id = ?');
-        const delSale = db.prepare('DELETE FROM sales WHERE id = ?');
+        db.prepare(`
+          UPDATE products
+          SET stock_qty = stock_qty + (
+            SELECT COALESCE(SUM(qty), 0)
+            FROM sale_items
+            WHERE sale_items.product_id = products.id AND sale_id IN (SELECT value FROM json_each(?))
+          )
+          WHERE id IN (
+            SELECT DISTINCT product_id
+            FROM sale_items
+            WHERE sale_id IN (SELECT value FROM json_each(?))
+          )
+        `).run(idsJson, idsJson);
 
-        for (const id of ids) {
-          const items = getItems.all(id);
-          for (const it of items) incStock.run(it.qty, it.product_id);
-          delTx.run(id);
-          delItems.run(id);
-          delSale.run(id);
-          deletedCount++;
-        }
+        db.prepare("DELETE FROM account_transactions WHERE ref_type = 'sale' AND ref_id IN (SELECT value FROM json_each(?))").run(idsJson);
+        db.prepare("DELETE FROM sale_items WHERE sale_id IN (SELECT value FROM json_each(?))").run(idsJson);
+        db.prepare("DELETE FROM sales WHERE id IN (SELECT value FROM json_each(?))").run(idsJson);
+        deletedCount = ids.length;
       } else if (entity === 'purchases') {
-        const getItems = db.prepare('SELECT * FROM purchase_items WHERE purchase_id = ?');
-        const decStock = db.prepare('UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?');
-        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'purchase' AND ref_id = ?");
-        const delItems = db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?');
-        const delPu = db.prepare('DELETE FROM purchases WHERE id = ?');
+        db.prepare(`
+          UPDATE products
+          SET stock_qty = stock_qty - (
+            SELECT COALESCE(SUM(qty), 0)
+            FROM purchase_items
+            WHERE purchase_items.product_id = products.id AND purchase_id IN (SELECT value FROM json_each(?))
+          )
+          WHERE id IN (
+            SELECT DISTINCT product_id
+            FROM purchase_items
+            WHERE purchase_id IN (SELECT value FROM json_each(?))
+          )
+        `).run(idsJson, idsJson);
 
-        for (const id of ids) {
-          const items = getItems.all(id);
-          for (const it of items) decStock.run(it.qty, it.product_id);
-          delTx.run(id);
-          delItems.run(id);
-          delPu.run(id);
-          deletedCount++;
-        }
+        db.prepare("DELETE FROM account_transactions WHERE ref_type = 'purchase' AND ref_id IN (SELECT value FROM json_each(?))").run(idsJson);
+        db.prepare("DELETE FROM purchase_items WHERE purchase_id IN (SELECT value FROM json_each(?))").run(idsJson);
+        db.prepare("DELETE FROM purchases WHERE id IN (SELECT value FROM json_each(?))").run(idsJson);
+        deletedCount = ids.length;
       } else {
         throw new Error('Invalid bulk delete entity');
       }
