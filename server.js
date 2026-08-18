@@ -1222,8 +1222,10 @@ route('POST', '/api/sales', async (req, res) => {
   try {
     const sale = transaction(() => {
       let subtotal = 0;
+      // ⚡ Bolt: Pre-compile query outside loop to prevent N+1 compilation overhead
+      const getProdStmt = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProdStmt.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1342,8 +1344,10 @@ route('POST', '/api/purchases', async (req, res) => {
   try {
     const purchase = transaction(() => {
       let total = 0;
+      // ⚡ Bolt: Pre-compile query outside loop to prevent N+1 compilation overhead
+      const getProdStmt = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProdStmt.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
