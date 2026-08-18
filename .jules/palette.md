@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Adding ARIA labels and tooltips to icon-only buttons
+**Learning:** Icon-only buttons (like modal close buttons `&times;` and sidebar toggles `☰`) present accessibility barriers if they lack `aria-label`s for screen readers or `title` tooltips for mouse hover interactions. While ARIA labels serve screen reader users, visual users also benefit from tooltips on icon buttons to clarify their function.
+**Action:** Always include both `aria-label` for semantic accessibility and `title` for visual tooltips on icon-only interactive elements such as `&times;` (close), trash bin icons (remove/delete), and hamburger menus (navigation toggle).
