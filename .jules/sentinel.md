@@ -1,0 +1,4 @@
+## 2026-08-20 - [Path Traversal in Static File Handler]
+**Vulnerability:** The static file handler uses `.startsWith(PUBLIC_DIR)` to validate paths, which can be bypassed using sibling directories when the requested file starts with the same prefix (e.g. `/public_secret`). Path URL encoding combined with `startsWith` fails to properly prevent directory traversal to sibling paths.
+**Learning:** In Node.js native routing, `new URL()` does not normalize URL-encoded path separators (e.g., `%2E%2E%2F`). If `decodeURIComponent()` is called on `url.pathname` afterwards, the encoded sequences become active traversal elements (`../`), which bypasses simple prefix matching like `startsWith()` if it targets a sibling directory starting with the same name.
+**Prevention:** Always use `path.relative(baseDir, resolvedPath)` and ensure the result does not equal '..', start with '..' + path.sep, or resolve to an absolute path.
