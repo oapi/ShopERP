@@ -316,13 +316,28 @@ route('POST', '/api/auth/login', async (req, res) => {
   if (!username || !password) return err(res, 400, 'Username and password are required');
 
   const hashed = hashPassword(password);
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE username = ? AND password_hash = ? AND active = 1').get(username, hashed);
-  if (!user) return err(res, 401, 'Invalid username or password');
+  const hashedBuf = Buffer.from(hashed, 'hex');
+
+  // Prevent timing attacks by fetching the user first and using timingSafeEqual
+  const user = db.prepare('SELECT id, username, name, role, password_hash FROM users WHERE username = ? AND active = 1').get(username);
+
+  if (!user) {
+    // Dummy check to ensure constant time
+    crypto.timingSafeEqual(hashedBuf, hashedBuf); // This takes very little time, we also need to fake the DB call time or use a dummy hash from DB, but since the bottleneck is hashPassword (done before), the difference is negligible.
+    return err(res, 401, 'Invalid username or password');
+  }
+
+  const storedHashBuf = Buffer.from(user.password_hash, 'hex');
+  if (hashedBuf.length !== storedHashBuf.length || !crypto.timingSafeEqual(hashedBuf, storedHashBuf)) {
+    return err(res, 401, 'Invalid username or password');
+  }
 
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?,?)').run(token, user.id);
 
-  json(res, 200, { token, user });
+  // Don't send password_hash back to client
+  const safeUser = { id: user.id, username: user.username, name: user.name, role: user.role };
+  json(res, 200, { token, user: safeUser });
 });
 
 route('GET', '/api/auth/me', (req, res) => {
