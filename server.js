@@ -884,6 +884,8 @@ route('GET', '/api/accounts/:id/statement', (req, res, p) => {
 
   const txs = db.prepare('SELECT * FROM account_transactions WHERE account_id = ? ORDER BY date, id').all(p.id);
   let running = acct.opening_balance;
+  // ⚡ Bolt: Cache payment statement outside iteration to prevent N+1 compilations overhead
+  const stmtGetPayment = db.prepare('SELECT party_type FROM payments WHERE id = ?');
   const entries = txs.map(t => {
     let debit = 0;
     let credit = 0;
@@ -894,7 +896,7 @@ route('GET', '/api/accounts/:id/statement', (req, res, p) => {
       credit = t.amount;
       running -= credit;
     } else if (t.type === 'due_payment') {
-      const pm = db.prepare('SELECT party_type FROM payments WHERE id = ?').get(t.ref_id);
+      const pm = stmtGetPayment.get(t.ref_id);
       if (pm && pm.party_type === 'customer') {
         debit = t.amount;
         running += debit;
@@ -1222,8 +1224,10 @@ route('POST', '/api/sales', async (req, res) => {
   try {
     const sale = transaction(() => {
       let subtotal = 0;
+      // ⚡ Bolt: Cache product statement outside iteration to prevent N+1 compilations overhead
+      const stmtGetProduct = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = stmtGetProduct.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1342,8 +1346,10 @@ route('POST', '/api/purchases', async (req, res) => {
   try {
     const purchase = transaction(() => {
       let total = 0;
+      // ⚡ Bolt: Cache product statement outside iteration to prevent N+1 compilations overhead
+      const stmtGetProduct = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = stmtGetProduct.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
