@@ -315,14 +315,24 @@ route('POST', '/api/auth/login', async (req, res) => {
   const password = str(b.password);
   if (!username || !password) return err(res, 400, 'Username and password are required');
 
+  // Compute hash first to prevent timing differences based on user existence
   const hashed = hashPassword(password);
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE username = ? AND password_hash = ? AND active = 1').get(username, hashed);
-  if (!user) return err(res, 401, 'Invalid username or password');
+  const user = db.prepare('SELECT id, username, name, role, password_hash FROM users WHERE username = ? AND active = 1').get(username);
+
+  // Constant time comparison to prevent timing attacks (e.g. username enumeration)
+  const validHashBuffer = Buffer.from(user ? user.password_hash : hashed, 'hex');
+  const inputHashBuffer = Buffer.from(hashed, 'hex');
+  let isValid = false;
+  if (validHashBuffer.length === inputHashBuffer.length) {
+    isValid = crypto.timingSafeEqual(validHashBuffer, inputHashBuffer);
+  }
+
+  if (!user || !isValid) return err(res, 401, 'Invalid username or password');
 
   const token = crypto.randomBytes(32).toString('hex');
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?,?)').run(token, user.id);
 
-  json(res, 200, { token, user });
+  json(res, 200, { token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
 });
 
 route('GET', '/api/auth/me', (req, res) => {
@@ -1738,7 +1748,10 @@ const server = http.createServer(async (req, res) => {
     // Static files
     let filePath = pathname === '/' ? '/index.html' : pathname;
     filePath = path.normalize(path.join(PUBLIC_DIR, filePath));
-    if (!filePath.startsWith(PUBLIC_DIR)) return err(res, 403, 'Forbidden');
+    const rel = path.relative(PUBLIC_DIR, filePath);
+    if (rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)) {
+      return err(res, 403, 'Forbidden');
+    }
     fs.readFile(filePath, (e, data) => {
       if (e) return err(res, 404, 'Not found');
       res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
