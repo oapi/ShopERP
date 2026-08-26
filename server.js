@@ -669,6 +669,7 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
         const findProd = db.prepare('SELECT * FROM products WHERE name = ? AND active = 1');
         const findCust = db.prepare("SELECT * FROM customers WHERE (phone = ? AND phone != '') OR name = ?");
         const findAcct = db.prepare('SELECT id FROM accounts WHERE name = ? AND active = 1');
+        const defaultAcct = db.prepare('SELECT id FROM accounts WHERE active = 1 ORDER BY id LIMIT 1').get();
 
         groups.forEach((items, invNo) => {
           const first = items[0];
@@ -691,7 +692,6 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
             if (!acct) throw new Error(`Line ${first.lineNum}: Account '${acctName}' not found`);
             account_id = acct.id;
           } else {
-            const defaultAcct = db.prepare('SELECT id FROM accounts WHERE active = 1 ORDER BY id LIMIT 1').get();
             if (defaultAcct) account_id = defaultAcct.id;
           }
 
@@ -762,6 +762,7 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
         const findProd = db.prepare('SELECT * FROM products WHERE name = ? AND active = 1');
         const findSupp = db.prepare("SELECT * FROM suppliers WHERE (phone = ? AND phone != '') OR name = ?");
         const findAcct = db.prepare('SELECT id FROM accounts WHERE name = ? AND active = 1');
+        const defaultAcct = db.prepare('SELECT id FROM accounts WHERE active = 1 ORDER BY id LIMIT 1').get();
 
         groups.forEach((items, refNo) => {
           const first = items[0];
@@ -787,7 +788,6 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
             if (!acct) throw new Error(`Line ${first.lineNum}: Account '${acctName}' not found`);
             account_id = acct.id;
           } else {
-            const defaultAcct = db.prepare('SELECT id FROM accounts WHERE active = 1 ORDER BY id LIMIT 1').get();
             if (defaultAcct) account_id = defaultAcct.id;
           }
 
@@ -883,6 +883,7 @@ route('GET', '/api/accounts/:id/statement', (req, res, p) => {
   if (!acct) return err(res, 404, 'Account not found');
 
   const txs = db.prepare('SELECT * FROM account_transactions WHERE account_id = ? ORDER BY date, id').all(p.id);
+  const getPaymentParty = db.prepare('SELECT party_type FROM payments WHERE id = ?');
   let running = acct.opening_balance;
   const entries = txs.map(t => {
     let debit = 0;
@@ -894,7 +895,7 @@ route('GET', '/api/accounts/:id/statement', (req, res, p) => {
       credit = t.amount;
       running -= credit;
     } else if (t.type === 'due_payment') {
-      const pm = db.prepare('SELECT party_type FROM payments WHERE id = ?').get(t.ref_id);
+      const pm = getPaymentParty.get(t.ref_id);
       if (pm && pm.party_type === 'customer') {
         debit = t.amount;
         running += debit;
@@ -1222,8 +1223,9 @@ route('POST', '/api/sales', async (req, res) => {
   try {
     const sale = transaction(() => {
       let subtotal = 0;
+      const getProd = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProd.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1342,8 +1344,9 @@ route('POST', '/api/purchases', async (req, res) => {
   try {
     const purchase = transaction(() => {
       let total = 0;
+      const getProd = db.prepare('SELECT * FROM products WHERE id = ?');
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProd.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
