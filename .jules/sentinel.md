@@ -1,0 +1,4 @@
+## 2026-08-27 - [Path Traversal in Node.js Routing]
+**Vulnerability:** Path traversal bypass in Node.js native server routing when relying on `String.prototype.startsWith` for boundary validation.
+**Learning:** `new URL()` in Node.js does not normalize URL-encoded path separators (e.g., `%2E%2E%2F`). If `decodeURIComponent()` is called on `url.pathname` afterwards, the encoded sequences become active traversal elements (`../`). Checking boundary containment via `startsWith()` is insufficient because sibling directories (e.g., `/app/public-secret`) share the prefix of the target directory (e.g., `/app/public`).
+**Prevention:** Always use `path.relative(baseDir, resolvedPath)` and ensure the result does not equal `..`, start with `..` + `path.sep`, or resolve to an absolute path for robust directory traversal prevention.
