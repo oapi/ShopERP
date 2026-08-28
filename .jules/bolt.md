@@ -1,0 +1,3 @@
+## 2024-05-24 - Pre-compile SQLite queries at module level
+**Learning:** In this application architecture, `db.js` initializes the database schema synchronously when it is required. Because of this, it is perfectly safe to invoke `db.prepare()` globally at the module level immediately upon import, instead of compiling queries dynamically inside route handlers or functions. Compiling queries dynamically inside functions like `customerBalance` inside loops like the `n+1` case creates massive unnecessary `node:sqlite` compilation overhead.
+**Action:** When extracting data in frequently called helper functions (such as balance calculations), move the `db.prepare()` statements outside the function scope so they are compiled once at server startup and reused.
