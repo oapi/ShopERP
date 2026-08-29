@@ -843,8 +843,14 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
 // ---- Accounts & Cash Management ----
 route('GET', '/api/accounts', (req, res) => {
   if (!requireAuth(req, res)) return;
-  const rows = db.prepare('SELECT * FROM accounts WHERE active = 1 ORDER BY id').all();
-  for (const a of rows) a.current_balance = accountBalance(a.id);
+  const selectCols = `*, ROUND(
+    opening_balance
+    + (SELECT COALESCE(SUM(amount), 0) FROM account_transactions WHERE account_id = accounts.id AND type IN ('deposit', 'transfer_in', 'sale_collection'))
+    - (SELECT COALESCE(SUM(amount), 0) FROM account_transactions WHERE account_id = accounts.id AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense'))
+    + (SELECT COALESCE(SUM(amount), 0) FROM account_transactions WHERE account_id = accounts.id AND type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer'))
+    - (SELECT COALESCE(SUM(amount), 0) FROM account_transactions WHERE account_id = accounts.id AND type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')), 2
+  ) AS current_balance`;
+  const rows = db.prepare(`SELECT ${selectCols} FROM accounts WHERE active = 1 ORDER BY id`).all();
   json(res, 200, rows);
 });
 
@@ -1030,9 +1036,13 @@ route('GET', '/api/customers', (req, res, params, q) => {
   const allowedSortCols = {
     name: 'name', phone: 'phone', address: 'address', type: 'type', id: 'id'
   };
+  const selectCols = `*, ROUND(
+    (SELECT COALESCE(SUM(total - paid), 0) FROM sales WHERE customer_id = customers.id) -
+    (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE party_type = 'customer' AND party_id = customers.id), 2
+  ) AS balance`;
   const result = queryPaginated(q, {
     fromSql: 'customers',
-    selectCols: '*',
+    selectCols,
     allowedSortCols,
     defaultSortCol: 'name',
     defaultSortDir: 'ASC',
@@ -1045,7 +1055,6 @@ route('GET', '/api/customers', (req, res, params, q) => {
       }
     }
   });
-  for (const c of result.data) c.balance = customerBalance(c.id);
   json(res, 200, result);
 });
 
@@ -1107,9 +1116,13 @@ route('GET', '/api/suppliers', (req, res, params, q) => {
   const allowedSortCols = {
     name: 'name', phone: 'phone', address: 'address', id: 'id'
   };
+  const selectCols = `*, ROUND(
+    (SELECT COALESCE(SUM(total - paid), 0) FROM purchases WHERE supplier_id = suppliers.id) -
+    (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE party_type = 'supplier' AND party_id = suppliers.id), 2
+  ) AS balance`;
   const result = queryPaginated(q, {
     fromSql: 'suppliers',
-    selectCols: '*',
+    selectCols,
     allowedSortCols,
     defaultSortCol: 'name',
     defaultSortDir: 'ASC',
@@ -1118,7 +1131,6 @@ route('GET', '/api/suppliers', (req, res, params, q) => {
       clauses.push('active = 1');
     }
   });
-  for (const s of result.data) s.balance = supplierBalance(s.id);
   json(res, 200, result);
 });
 
