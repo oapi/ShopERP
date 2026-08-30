@@ -1,0 +1,3 @@
+## 2024-05-14 - Optimize accountBalance query performance
+**Learning:** node:sqlite `db.prepare()` has a high recompilation overhead. Defining these inside functions that are called in loops (like calculating account balances for the dashboard or account list) creates significant performance degradation. Additionally, executing multiple sequential SUM queries on the same table causes unnecessary N+1 overhead.
+**Action:** Always hoist `db.prepare()` out to the module level so the queries are compiled once on load. Combine sequential database queries on the same table into a single query using conditional aggregation (e.g., `SUM(CASE WHEN ... END)`) where possible.
