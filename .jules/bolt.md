@@ -1,0 +1,3 @@
+## 2024-05-19 - N+1 query and compilation overhead in native SQLite loop
+**Learning:** Functions like `customerBalance`, `supplierBalance`, and `accountBalance` execute multiple distinct `db.prepare()` queries within functions that are frequently called from loops (e.g., iterating through multiple customers). `node:sqlite` has severe compilation overhead when compiling identical queries repeatedly instead of pre-compiling and caching them globally at module level.
+**Action:** When working with `node:sqlite`, always evaluate if `db.prepare()` can be pulled to the module level and if multiple calculations on the same/related entities can be squashed into a single database query using scalar subqueries or `CASE` conditional aggregation.
