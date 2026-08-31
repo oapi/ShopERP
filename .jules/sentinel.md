@@ -1,0 +1,4 @@
+## 2024-08-31 - Fix Path Traversal via `startsWith` Prefix Bypass
+**Vulnerability:** Path Traversal via Partial Directory Name Match in `startsWith`
+**Learning:** When validating that a file path falls inside a specific directory using `filePath.startsWith(PUBLIC_DIR)`, if `PUBLIC_DIR` does not end with a trailing slash (e.g., `/app/public`), the validation incorrectly passes for sibling directories that share the same prefix (e.g., `/app/public_secret`). Furthermore, Node.js native routing using `new URL()` does not normalize URL-encoded path separators (e.g., `%2E%2E%2F`). Thus, an attacker can craft a payload like `/%2E%2E%2Fpublic_secret/file.txt` to access restricted files.
+**Prevention:** Always use `path.relative(PUBLIC_DIR, targetPath)` and enforce strict boundary checking by verifying `!relativePath.startsWith('..') && !path.isAbsolute(relativePath)` instead of relying on string prefix matching.
