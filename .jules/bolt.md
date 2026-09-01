@@ -1,0 +1,3 @@
+## 2023-10-25 - [Optimize account balance calculation using conditional aggregation]
+**Learning:** Calculating distinct sums from the same table across different conditions introduces significant query execution overhead, particularly since `db.prepare()` compilation is costly inside iterative functions.
+**Action:** Consolidate multiple `SUM()` queries into a single query using conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`) and pre-compile the query at the module level to avoid N+1-like overhead.
