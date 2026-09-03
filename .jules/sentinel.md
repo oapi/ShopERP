@@ -1,0 +1,4 @@
+## 2024-09-03 - Fix Path Traversal via Partial Match & Decoded Paths
+**Vulnerability:** Path traversal allowing access to arbitrary files outside of `public/` directory (e.g. `data/shop.db`).
+**Learning:** In Node.js native routing, `new URL()` does not normalize URL-encoded path separators (e.g., `%2E%2E%2F`). If `decodeURIComponent()` is called on `url.pathname` afterwards, the encoded sequences become active traversal elements (`../`). Using simple string prefix checks like `startsWith(PUBLIC_DIR)` is vulnerable to these active traversal elements as well as partial directory matches (e.g. `public-secret` matches `public`).
+**Prevention:** Always use `path.relative(PUBLIC_DIR, filePath)` for final boundary validation and check if the relative path starts with `..` or is an absolute path (`path.isAbsolute`).
