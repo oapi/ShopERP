@@ -1,0 +1,5 @@
+## 2026-08-08 - Pre-compiling Database Statements with node:sqlite
+
+**Learning:** It is generally known that database statements should be pre-compiled to avoid overhead. However, when statements target tables that are required for basic setup and are synchronized sequentially during the import of `db.js`, we can safely define and prepare `db.prepare()` statements at the module scope globally in other files (e.g. `server.js`) rather than defining them lazily inside the route. This applies specifically to the architecture of this codebase since `db.js` fully initializes all schema tables during its import cycle before exporting the `db` instance.
+
+**Action:** Whenever optimizing database queries with `node:sqlite` in this codebase, hoist standard query preparations outside of function definitions and into the module level when possible. For dynamic schemas where tables might be missing (e.g., dynamic imports before DB creation), laziness is required, but here we can statically prepare the queries.
