@@ -191,38 +191,25 @@ function supplierBalance(id) {
   return Math.round((s - p) * 100) / 100;
 }
 
+const accountBalanceStmt = db.prepare(`
+  SELECT
+    a.opening_balance,
+    SUM(CASE WHEN t.type IN ('deposit', 'transfer_in', 'sale_collection') THEN t.amount ELSE 0 END) AS inflow,
+    SUM(CASE WHEN t.type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN t.amount ELSE 0 END) AS outflow,
+    SUM(CASE WHEN t.type = 'due_payment' AND t.ref_type = 'payment' AND t.ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN t.amount ELSE 0 END) AS pymtCust,
+    SUM(CASE WHEN t.type = 'due_payment' AND t.ref_type = 'payment' AND t.ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN t.amount ELSE 0 END) AS pymtSupp
+  FROM accounts a
+  LEFT JOIN account_transactions t ON a.id = t.account_id
+  WHERE a.id = ?
+  GROUP BY a.id
+`);
+
+// Optimized: Single query using conditional aggregation, pre-compiled statement
 function accountBalance(acctId) {
-  const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
-  if (!acct) return 0;
-  const openBal = acct.opening_balance;
+  const stats = accountBalanceStmt.get(acctId);
+  if (!stats) return 0;
 
-  const inflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
-
-  const outflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
-
-  const net = openBal + inflow + pymtCust - outflow - pymtSupp;
+  const net = stats.opening_balance + (stats.inflow || 0) + (stats.pymtCust || 0) - (stats.outflow || 0) - (stats.pymtSupp || 0);
   return Math.round(net * 100) / 100;
 }
 
