@@ -637,7 +637,7 @@
     modal.innerHTML =
       '<div class="modal-head">' +
       '<div>' + title + '</div>' +
-      '<button class="modal-close" id="btn-modal-close">&times;</button>' +
+      '<button class="modal-close" id="btn-modal-close" title="Close" aria-label="Close">&times;</button>' +
       '</div>' +
       '<div class="modal-body">' + bodyHtml + '</div>' +
       (footerHtml ? '<div class="modal-foot">' + footerHtml + '</div>' : '');
@@ -1263,7 +1263,7 @@
           '<td><span class="txt-muted">' + item.unit + '</span></td>' +
           '<td class="num"><input type="number" min="0" step="any" class="pos-cart-price num" data-idx="' + idx + '" value="' + item.unit_price + '"></td>' +
           '<td class="num"><strong>' + fmtTk(item.qty * item.unit_price) + '</strong></td>' +
-          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '">&times;</button></td>' +
+          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '" title="Remove item" aria-label="Remove item">&times;</button></td>' +
           '</tr>'
         ).join('');
       }
@@ -1987,7 +1987,7 @@
             '<td class="num">' + it.qty + ' ' + it.unit + '</td>' +
             '<td class="num">' + fmtTk(it.unit_cost) + '</td>' +
             '<td class="num"><strong>' + fmtTk(lt) + '</strong></td>' +
-            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '">&times;</button></td>' +
+            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '" title="Remove item" aria-label="Remove item">&times;</button></td>' +
             '</tr>';
         }).join('');
       }
