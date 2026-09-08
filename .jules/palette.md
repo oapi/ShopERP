@@ -1,0 +1,3 @@
+## 2026-09-08 - Add ARIA labels to icon-only buttons
+**Learning:** Found that multiple icon-only buttons (`&times;` and hamburger menu) across modal dialogs, item lists (POS, Purchases), and the sidebar were completely lacking `aria-label` attributes and tooltip titles, rendering them inaccessible to screen readers and confusing to desktop users without hover context.
+**Action:** Always verify that interactive elements without visible text (like `.btn-pos-remove`, `.modal-close`, `.menu-toggle`) have descriptive `aria-label` and `title` attributes. When writing Playwright scripts to verify these, remember to wait for `#login-backdrop` to hide post-login, and explicitly wait for `#modal-backdrop.active` before interacting with elements inside modals.
