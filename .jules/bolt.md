@@ -1,0 +1,3 @@
+## 2024-09-08 - Optimize balance calculations via pre-compiled statements & combined queries
+**Learning:** node:sqlite `db.prepare()` parsing and compilation overhead is significant when executed inside loops (e.g. mapping over customers/accounts). Additionally, separate scalar subqueries for related metrics trigger N+1 queries unnecessarily.
+**Action:** Always hoist `db.prepare()` out of loop scopes to module level to cache compiled statements, and combine multiple aggregations on the same table into a single query via conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`) to avoid redundant passes.
