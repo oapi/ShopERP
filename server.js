@@ -181,49 +181,43 @@ function requireAdmin(req, res) {
 
 // Balance helpers
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
-  return Math.round((s - p) * 100) / 100;
+  // ⚡ Bolt Optimization: Combines multiple queries into a single query to avoid N+1 overhead
+  const res = db.prepare(`
+    SELECT ROUND(
+      COALESCE((SELECT SUM(total - paid) FROM sales WHERE customer_id = ?), 0) -
+      COALESCE((SELECT SUM(amount) FROM payments WHERE party_type = 'customer' AND party_id = ?), 0),
+    2) AS balance
+  `).get(id, id);
+  return res ? res.balance : 0;
 }
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
-  return Math.round((s - p) * 100) / 100;
+  // ⚡ Bolt Optimization: Combines multiple queries into a single query to avoid N+1 overhead
+  const res = db.prepare(`
+    SELECT ROUND(
+      COALESCE((SELECT SUM(total - paid) FROM purchases WHERE supplier_id = ?), 0) -
+      COALESCE((SELECT SUM(amount) FROM payments WHERE party_type = 'supplier' AND party_id = ?), 0),
+    2) AS balance
+  `).get(id, id);
+  return res ? res.balance : 0;
 }
 
 function accountBalance(acctId) {
-  const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
-  if (!acct) return 0;
-  const openBal = acct.opening_balance;
-
-  const inflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
-
-  const outflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
-
-  const net = openBal + inflow + pymtCust - outflow - pymtSupp;
-  return Math.round(net * 100) / 100;
+  // ⚡ Bolt Optimization: Replace 5 queries with 1 using conditional aggregation
+  const res = db.prepare(`
+    SELECT ROUND(
+      COALESCE(a.opening_balance, 0) +
+      COALESCE((
+        SELECT
+          SUM(CASE WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount ELSE 0 END) -
+          SUM(CASE WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN amount ELSE 0 END) +
+          SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN amount ELSE 0 END) -
+          SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN amount ELSE 0 END)
+        FROM account_transactions WHERE account_id = a.id
+      ), 0), 2) AS current_balance
+    FROM accounts a
+    WHERE a.id = ?
+  `).get(acctId);
+  return res ? res.current_balance : 0;
 }
 
 // Server-side Pagination, Sorting & Filtering Query Helper
@@ -843,8 +837,22 @@ route('POST', '/api/import/:entity', async (req, res, p) => {
 // ---- Accounts & Cash Management ----
 route('GET', '/api/accounts', (req, res) => {
   if (!requireAuth(req, res)) return;
-  const rows = db.prepare('SELECT * FROM accounts WHERE active = 1 ORDER BY id').all();
-  for (const a of rows) a.current_balance = accountBalance(a.id);
+  // ⚡ Bolt Optimization: Eliminated N+1 accountBalance queries
+  const rows = db.prepare(`
+    SELECT a.*,
+      ROUND(a.opening_balance +
+        COALESCE((
+          SELECT
+            SUM(CASE WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount ELSE 0 END) -
+            SUM(CASE WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN amount ELSE 0 END) +
+            SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN amount ELSE 0 END) -
+            SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN amount ELSE 0 END)
+          FROM account_transactions WHERE account_id = a.id
+        ), 0), 2) AS current_balance
+    FROM accounts a
+    WHERE a.active = 1
+    ORDER BY a.id
+  `).all();
   json(res, 200, rows);
 });
 
@@ -1028,24 +1036,30 @@ route('DELETE', '/api/products/:id', (req, res, p) => {
 route('GET', '/api/customers', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
   const allowedSortCols = {
-    name: 'name', phone: 'phone', address: 'address', type: 'type', id: 'id'
+    name: 'customers.name', phone: 'customers.phone', address: 'customers.address', type: 'customers.type', id: 'customers.id'
   };
+  // ⚡ Bolt Optimization: Eliminated N+1 customerBalance queries via selectCols aggregation
   const result = queryPaginated(q, {
     fromSql: 'customers',
-    selectCols: '*',
+    selectCols: `
+      customers.*,
+      ROUND(
+        COALESCE((SELECT SUM(total - paid) FROM sales WHERE customer_id = customers.id), 0) -
+        COALESCE((SELECT SUM(amount) FROM payments WHERE party_type = 'customer' AND party_id = customers.id), 0),
+      2) AS balance
+    `,
     allowedSortCols,
-    defaultSortCol: 'name',
+    defaultSortCol: 'customers.name',
     defaultSortDir: 'ASC',
-    searchCols: ['name', 'phone', 'address'],
+    searchCols: ['customers.name', 'customers.phone', 'customers.address'],
     buildWhere: (clauses, args) => {
-      clauses.push('active = 1');
+      clauses.push('customers.active = 1');
       if (q.get('type')) {
-        clauses.push('type = ?');
+        clauses.push('customers.type = ?');
         args.push(q.get('type'));
       }
     }
   });
-  for (const c of result.data) c.balance = customerBalance(c.id);
   json(res, 200, result);
 });
 
@@ -1105,20 +1119,26 @@ route('GET', '/api/customers/:id/ledger', (req, res, p) => {
 route('GET', '/api/suppliers', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
   const allowedSortCols = {
-    name: 'name', phone: 'phone', address: 'address', id: 'id'
+    name: 'suppliers.name', phone: 'suppliers.phone', address: 'suppliers.address', id: 'suppliers.id'
   };
+  // ⚡ Bolt Optimization: Eliminated N+1 supplierBalance queries via selectCols aggregation
   const result = queryPaginated(q, {
     fromSql: 'suppliers',
-    selectCols: '*',
+    selectCols: `
+      suppliers.*,
+      ROUND(
+        COALESCE((SELECT SUM(total - paid) FROM purchases WHERE supplier_id = suppliers.id), 0) -
+        COALESCE((SELECT SUM(amount) FROM payments WHERE party_type = 'supplier' AND party_id = suppliers.id), 0),
+      2) AS balance
+    `,
     allowedSortCols,
-    defaultSortCol: 'name',
+    defaultSortCol: 'suppliers.name',
     defaultSortDir: 'ASC',
-    searchCols: ['name', 'phone', 'address'],
+    searchCols: ['suppliers.name', 'suppliers.phone', 'suppliers.address'],
     buildWhere: (clauses, args) => {
-      clauses.push('active = 1');
+      clauses.push('suppliers.active = 1');
     }
   });
-  for (const s of result.data) s.balance = supplierBalance(s.id);
   json(res, 200, result);
 });
 
