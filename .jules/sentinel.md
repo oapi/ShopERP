@@ -1,0 +1,4 @@
+## 2025-03-09 - Fix Timing Attack in Authentication
+**Vulnerability:** The `POST /api/auth/login` endpoint was vulnerable to a timing attack because the `password_hash` was compared directly within the SQLite database query (`WHERE username = ? AND password_hash = ?`), which performs a fast early-exit string comparison. An attacker could measure response times to guess the hash character by character. Furthermore, it queried the database based on the provided password hash, leaking whether the username exists or not based on query time.
+**Learning:** Checking passwords in the SQL `WHERE` clause is vulnerable to timing side-channels and user enumeration attacks.
+**Prevention:** Always query the user record first, then use a constant-time comparison function like `crypto.timingSafeEqual()` on the application layer. Implement a fallback comparison for nonexistent users to prevent enumeration timing attacks.
