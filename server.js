@@ -191,38 +191,25 @@ function supplierBalance(id) {
   return Math.round((s - p) * 100) / 100;
 }
 
+// Optimization: Combine sequential queries into a single query using conditional aggregation to prevent N+1 DB overhead.
+const stmtAccountBalance = db.prepare(`
+  SELECT
+    a.opening_balance,
+    COALESCE(SUM(CASE WHEN t.type IN ('deposit', 'transfer_in', 'sale_collection') THEN t.amount ELSE 0 END), 0) AS inflow,
+    COALESCE(SUM(CASE WHEN t.type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN t.amount ELSE 0 END), 0) AS outflow,
+    COALESCE(SUM(CASE WHEN t.type = 'due_payment' AND t.ref_type = 'payment' AND p.party_type = 'customer' THEN t.amount ELSE 0 END), 0) AS pymt_cust,
+    COALESCE(SUM(CASE WHEN t.type = 'due_payment' AND t.ref_type = 'payment' AND p.party_type = 'supplier' THEN t.amount ELSE 0 END), 0) AS pymt_supp
+  FROM accounts a
+  LEFT JOIN account_transactions t ON a.id = t.account_id
+  LEFT JOIN payments p ON t.ref_id = p.id AND t.ref_type = 'payment'
+  WHERE a.id = ?
+  GROUP BY a.id
+`);
+
 function accountBalance(acctId) {
-  const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
-  if (!acct) return 0;
-  const openBal = acct.opening_balance;
-
-  const inflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
-
-  const outflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
-
-  const net = openBal + inflow + pymtCust - outflow - pymtSupp;
+  const row = stmtAccountBalance.get(acctId);
+  if (!row) return 0;
+  const net = row.opening_balance + row.inflow + row.pymt_cust - row.outflow - row.pymt_supp;
   return Math.round(net * 100) / 100;
 }
 
