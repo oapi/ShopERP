@@ -1,0 +1,3 @@
+## 2024-05-14 - Add ARIA Labels to Icon-Only Buttons
+**Learning:** Found multiple instances where the generic `&times;` icon was used as a close or remove button (`#btn-modal-close`, `.btn-pos-remove`, `.btn-pu-del`) without any accessibility labels, meaning screen readers would likely announce it as "times" rather than its functional purpose ("Close" or "Remove item"). Adding `aria-label` along with a native `title` tooltip improves both screen reader and mouse user experiences without altering the layout.
+**Action:** Always check newly added icon-only buttons for missing `aria-label` or `title` attributes. Use Playwright scripts to evaluate the rendered HTML and assert on accessibility attributes during verification.
