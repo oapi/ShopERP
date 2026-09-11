@@ -1,0 +1,5 @@
+
+## 2026-09-11 - [Path Traversal via Partial Directory Match]
+**Vulnerability:** The application was vulnerable to path traversal because it used `!filePath.startsWith(PUBLIC_DIR)` for boundary validation after decoding the URL and joining it with `PUBLIC_DIR`. A malicious request could use `..` segments (like `/../public-secret/foo.txt`) that are resolved in a way where the resulting path starts with `/app/public` (e.g. `/app/public-secret`), bypassing the simple prefix check and exposing arbitrary files outside the intended public directory.
+**Learning:** `new URL()` does not normalize URL-encoded path separators (`%2E%2E%2F`). When decoded later, these become active `../` traversal elements. Combining this with `path.join` and a naive `startsWith()` check leads to partial directory match exploits.
+**Prevention:** Always use `path.relative(ROOT_DIR, targetPath)` and rigorously check if the result escapes the directory boundaries (e.g., `relativePath === '..' || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)`) to enforce strict boundaries.
