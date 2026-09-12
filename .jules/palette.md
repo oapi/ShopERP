@@ -1,0 +1,3 @@
+## 2024-09-12 - Added ARIA Labels to Icon-Only Buttons
+**Learning:** In dynamically generated Vanilla JS SPA tables and modals (like the CoreTrade POS UI), icon-only buttons (like `&times;` or navigation arrows `⏭`) are frequently injected as raw HTML strings without semantic accessibility attributes.
+**Action:** When updating such interfaces, locate all raw HTML string concatenations representing interactive elements (`<button>`) that lack textual content and explicitly inject `aria-label` and `title` attributes (e.g., `aria-label="Remove item" title="Remove item"`) to ensure both screen reader support and native tooltip visibility.
