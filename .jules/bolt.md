@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Optimize N+1 Balance Queries with Conditional Aggregation
+**Learning:** node:sqlite \`db.prepare()\` accounts for significant overhead if called iteratively in a loop, such as calculating balances inside a loop. Furthermore, doing multiple sequential reads to sum different subsets of a table (like different transaction types for an account) scales poorly.
+**Action:** Hoisted the \`db.prepare()\` statements out of \`customerBalance\`, \`supplierBalance\`, and \`accountBalance\` to module level. Combined sequential read queries into single queries using \`SUM(CASE WHEN condition THEN amount ELSE 0 END)\` to eliminate N+1 overhead.
