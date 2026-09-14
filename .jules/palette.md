@@ -1,0 +1,3 @@
+## 2024-09-14 - Add Accessibility to Dynamically Generated Icon-Only Buttons
+**Learning:** In Vanilla JS SPAs where HTML strings are dynamically generated and injected into the DOM (like `public/app.js`), it's easy to overlook accessibility attributes for elements such as icon-only buttons (e.g., `&times;` for closing modals or deleting items).
+**Action:** Always ensure that any dynamically generated interactive element, especially those lacking visible text, includes an explicit `aria-label` attribute and ideally a `title` attribute for tooltip support, ensuring screen reader compatibility and better overall UX.
