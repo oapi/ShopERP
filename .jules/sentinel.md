@@ -1,0 +1,4 @@
+## 2024-10-18 - [Path Traversal bypass via partial directory matching]
+**Vulnerability:** Path traversal bypassing simple prefix matching using string `startsWith()`.
+**Learning:** In Node.js native routing, checking `filePath.startsWith(PUBLIC_DIR)` is vulnerable to partial directory name match exploits if `PUBLIC_DIR` lacks a trailing slash. If `PUBLIC_DIR` is `/app/public`, it allows unintended access to a sibling directory like `/app/public-secret` because `/app/public-secret`.startsWith(`/app/public`) is true. Furthermore, returning a generic `404 Not Found` error instead of `403 Forbidden` prevents information leakage about internal file existence.
+**Prevention:** Use `path.relative(PUBLIC_DIR, filePath)` and check if it escapes the directory (e.g., `relativePath === '..' || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)`) to enforce strict boundaries.
