@@ -1220,10 +1220,13 @@ route('POST', '/api/sales', async (req, res) => {
     if (!it.product_id || num(it.qty) <= 0) return err(res, 400, 'Each item needs a product and a quantity > 0');
   }
   try {
+    // ⚡ Bolt: Hoist db.prepare out of loop to eliminate compilation overhead per item
+    const getProductStmt = db.prepare('SELECT * FROM products WHERE id = ?');
+
     const sale = transaction(() => {
       let subtotal = 0;
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProductStmt.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1340,10 +1343,13 @@ route('POST', '/api/purchases', async (req, res) => {
     if (!it.product_id || num(it.qty) <= 0) return err(res, 400, 'Each item needs a product and a quantity > 0');
   }
   try {
+    // ⚡ Bolt: Hoist db.prepare out of loop to eliminate compilation overhead per item
+    const getProductStmt = db.prepare('SELECT * FROM products WHERE id = ?');
+
     const purchase = transaction(() => {
       let total = 0;
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProductStmt.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
