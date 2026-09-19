@@ -1,0 +1,4 @@
+## 2026-09-19 - Fix path traversal vulnerability in static file serving
+**Vulnerability:** The server used `filePath.startsWith(PUBLIC_DIR)` to validate path bounds. However, since the requested URL pathname was first decoded using `decodeURIComponent()`, URL-encoded sequences like `%2E%2E%2F` became active `../` sequences after decoding. This allowed an attacker to break out of the public directory (e.g., requesting `/../public-secret/flag.txt`), which evaluates to true in `startsWith()` despite pointing outside.
+**Learning:** In native Node.js routing, simple prefix matching like `startsWith()` is vulnerable to path traversal if the path has been URI-decoded, allowing `../` sequences to act on the filesystem despite prefix validation.
+**Prevention:** Always use `path.relative()` and ensure the relative path does not escape the boundary directory (i.e., does not equal `..`, start with `../`, or form an absolute path).
