@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility for Icon-only Buttons
+**Learning:** The application heavily relies on vanilla JS string concatenation for generating DOM elements, particularly for icon-only buttons like modal close (`&times;`) or pagination arrows (`⏮`). Since these bypass standard static JSX/HTML linting, they are prone to missing essential accessibility attributes like `aria-label` and `title`.
+**Action:** When working with raw HTML string templates for UI components, always manually verify that icon-only buttons are given explicit `aria-label` attributes for screen readers and `title` attributes to provide native tooltips for mouse users.
