@@ -1738,7 +1738,13 @@ const server = http.createServer(async (req, res) => {
     // Static files
     let filePath = pathname === '/' ? '/index.html' : pathname;
     filePath = path.normalize(path.join(PUBLIC_DIR, filePath));
-    if (!filePath.startsWith(PUBLIC_DIR)) return err(res, 403, 'Forbidden');
+
+    // Sentinel Security Fix: robust path traversal prevention
+    const relativePath = path.relative(PUBLIC_DIR, filePath);
+    if (relativePath === '..' || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)) {
+      return err(res, 404, 'Not found'); // returns generic 404 instead of 403 to prevent info leakage
+    }
+
     fs.readFile(filePath, (e, data) => {
       if (e) return err(res, 404, 'Not found');
       res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
