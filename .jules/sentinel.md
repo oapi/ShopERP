@@ -1,0 +1,4 @@
+## 2024-05-18 - Path Traversal via Partial Directory Match
+**Vulnerability:** Static file serving route in `server.js` was using `if (!filePath.startsWith(PUBLIC_DIR))` to ensure files are within the public directory. If `PUBLIC_DIR` was `/app/public`, an attacker could traverse out of `public` and into `public-secret` using `/app/public-secret/secret.txt` because the directory name partially matches.
+**Learning:** `startsWith` is not a secure boundary validation check for paths without trailing slashes. Furthermore, returning a 403 Forbidden leaks information about the filesystem directory structure.
+**Prevention:** Use `path.relative` for robust boundary testing (`const rel = path.relative(PUBLIC_DIR, filePath); if(rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel))`) and return a generic 404 Not Found error instead.
