@@ -294,22 +294,22 @@
       startPage = Math.max(1, endPage - maxBtns + 1);
     }
 
-    pageBtns += '<button class="page-btn btn-page-nav" data-page="1" ' + (page <= 1 ? 'disabled' : '') + ' title="First Page">⏮</button>';
-    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + (page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + ' title="Previous Page">◀</button>';
+    pageBtns += '<button class="page-btn btn-page-nav" data-page="1" ' + (page <= 1 ? 'disabled' : '') + ' title="First Page" aria-label="First Page">⏮</button>';
+    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + (page - 1) + '" ' + (page <= 1 ? 'disabled' : '') + ' title="Previous Page" aria-label="Previous Page">◀</button>';
 
     for (let i = startPage; i <= endPage; i++) {
-      pageBtns += '<button class="page-btn btn-page-nav ' + (i === page ? 'active' : '') + '" data-page="' + i + '">' + i + '</button>';
+      pageBtns += '<button class="page-btn btn-page-nav ' + (i === page ? 'active' : '') + '" data-page="' + i + '" aria-label="Page ' + i + '">' + i + '</button>';
     }
 
-    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + (page + 1) + '" ' + (page >= total_pages ? 'disabled' : '') + ' title="Next Page">▶</button>';
-    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + total_pages + '" ' + (page >= total_pages ? 'disabled' : '') + ' title="Last Page">⏭</button>';
+    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + (page + 1) + '" ' + (page >= total_pages ? 'disabled' : '') + ' title="Next Page" aria-label="Next Page">▶</button>';
+    pageBtns += '<button class="page-btn btn-page-nav" data-page="' + total_pages + '" ' + (page >= total_pages ? 'disabled' : '') + ' title="Last Page" aria-label="Last Page">⏭</button>';
 
     return '' +
       '<div class="pagination-bar">' +
       '<div class="pagination-info">Showing <strong>' + start + '-' + end + '</strong> of <strong>' + fmtNum(total) + '</strong> records</div>' +
       '<div class="pagination-controls">' +
       '<div>Rows per page: ' +
-      '<select class="rows-per-page-select">' +
+      '<select class="rows-per-page-select" aria-label="Rows per page">' +
       [10, 25, 50, 100].map(opt => '<option value="' + opt + '" ' + (limit === opt ? 'selected' : '') + '>' + opt + '</option>').join('') +
       '</select>' +
       '</div>' +
@@ -637,7 +637,7 @@
     modal.innerHTML =
       '<div class="modal-head">' +
       '<div>' + title + '</div>' +
-      '<button class="modal-close" id="btn-modal-close">&times;</button>' +
+      '<button class="modal-close" id="btn-modal-close" aria-label="Close modal" title="Close modal">&times;</button>' +
       '</div>' +
       '<div class="modal-body">' + bodyHtml + '</div>' +
       (footerHtml ? '<div class="modal-foot">' + footerHtml + '</div>' : '');
@@ -1263,7 +1263,7 @@
           '<td><span class="txt-muted">' + item.unit + '</span></td>' +
           '<td class="num"><input type="number" min="0" step="any" class="pos-cart-price num" data-idx="' + idx + '" value="' + item.unit_price + '"></td>' +
           '<td class="num"><strong>' + fmtTk(item.qty * item.unit_price) + '</strong></td>' +
-          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '">&times;</button></td>' +
+          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '" aria-label="Remove item" title="Remove item">&times;</button></td>' +
           '</tr>'
         ).join('');
       }
@@ -1987,7 +1987,7 @@
             '<td class="num">' + it.qty + ' ' + it.unit + '</td>' +
             '<td class="num">' + fmtTk(it.unit_cost) + '</td>' +
             '<td class="num"><strong>' + fmtTk(lt) + '</strong></td>' +
-            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '">&times;</button></td>' +
+            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '" aria-label="Remove item" title="Remove item">&times;</button></td>' +
             '</tr>';
         }).join('');
       }
