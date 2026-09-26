@@ -1,0 +1,3 @@
+## 2024-09-26 - Consolidating Node SQLite Database Queries
+**Learning:** Iterative execution of `db.prepare()` accounts for significant execution overhead in `node:sqlite`. Furthermore, fetching multiple interrelated values with sequential database queries inside a frequently called function (like `accountBalance` calculated in `for` loops across multiple endpoints) creates substantial N+1 query overhead.
+**Action:** Always hoist `db.prepare()` statements out of loop bodies or frequently called functions to the module level. Consolidate multiple sequential read operations into a single combined query utilizing SQL subqueries and `CASE WHEN` conditional aggregation.
