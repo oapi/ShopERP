@@ -1,0 +1,4 @@
+## 2026-09-26 - Prevent Path Traversal in Static File Route
+**Vulnerability:** The static file serving logic in `server.js` used `filePath.startsWith(PUBLIC_DIR)` to enforce directory boundaries. However, because `PUBLIC_DIR` did not end in a trailing slash, it allowed accessing sibling directories like `/public-secret` if they started with the same prefix. Further, it returned a 403, leaking information about file existence.
+**Learning:** `startsWith()` without a trailing slash is insufficient for directory boundary checks. Additionally, URL decoding before path normalization means URL encoded `../` (like `%2E%2E%2F`) can bypass prefix checks.
+**Prevention:** Use `path.relative(ROOT_DIR, requestedPath)` and check if the relative path escapes the root directory (e.g. `relativePath === '..' || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)`). Always return a generic 404 for out of bounds files to prevent information disclosure.
