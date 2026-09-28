@@ -1,0 +1,3 @@
+## 2023-10-27 - Icon-only buttons lacking ARIA labels
+**Learning:** In dynamically generated Vanilla JS (like `public/app.js`), icon-only buttons (`&times;`, pagination arrows like `⏮`, `▶`) and dynamically generated modals are missing screen reader accessibility support. The static HTML is good (`index.html` has `aria-label="Close sidebar"`), but dynamic JS strings bypass standard static analysis checks, leaving them vulnerable to accessibility regressions.
+**Action:** Always verify dynamically generated HTML string templates for icon-only buttons to ensure they have an `aria-label` attribute or `title` describing their function.
