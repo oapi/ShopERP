@@ -1,0 +1,3 @@
+## 2023-10-25 - Eliminate N+1 and avoid recompiling node:sqlite queries in balance helpers
+**Learning:** node:sqlite `db.prepare()` operations incur a noticeable overhead if called repeatedly inside a heavily-used function (like computing balances across paginated lists). Executing multiple sequential queries inside a single function (like `accountBalance`) amplifies this overhead further.
+**Action:** Always hoist `db.prepare()` statements outside the executing functions to module scope. When retrieving multiple sums from the same table (e.g., deposits vs. withdrawals), consolidate them into a single SQL subquery scan using conditional aggregation (`SUM(CASE WHEN ...)`) to avoid roundtrip database latency.
