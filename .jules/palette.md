@@ -1,0 +1,3 @@
+## 2023-10-27 - Dynamically generated templates bypass a11y linters
+**Learning:** Standard static analysis linting (like JSX a11y linters) misses accessibility attributes (like `aria-label` and `title`) when standard string template literals are dynamically generated in vanilla JavaScript (e.g., `app.js` innerHTML). Elements like icon-only buttons (`&times;`) or pagination controls might lack labels entirely despite passing lint.
+**Action:** When working with vanilla JS string templates, always manually search for `<button>` and `<label>` tags to verify `aria-label`, `title`, and `for` attributes are explicitly included, especially for icon-only interactions.
