@@ -1,0 +1,4 @@
+## 2024-05-15 - Fix Path Traversal Vulnerability with Sibling Directories
+**Vulnerability:** A path traversal vulnerability existed where a request to an encoded sibling directory path (e.g., `/%2E%2E%2Fpublic-secret`) was decoded using `decodeURIComponent` and successfully bypassed the simple `startsWith` boundary check, allowing access to unauthorized files.
+**Learning:** In Node.js native routing, `decodeURIComponent` causes encoded sequences to become active traversal elements (`../`), which bypasses simple prefix matching like `startsWith()`. Returning generic 404 errors instead of 403 prevents directory structure leakage.
+**Prevention:** Always use `path.relative()` and check if it escapes the directory (e.g., `relativePath === '..' || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)`) to enforce strict boundaries. Avoid `startsWith` for path boundary checks.
