@@ -1,0 +1,3 @@
+## 2024-10-01 - Consolidate Multiple Read Queries in Node SQLite
+**Learning:** Node SQLite (`node:sqlite`) execution involves significant overhead per query when run in iterative loops or hot paths. Four separate `db.prepare(...).get()` queries on the same table can easily be 6.5x slower than a single query with `CASE WHEN` aggregation. Furthermore, hoisting the `db.prepare()` out of the function to module-level saves compilation overhead on each function invocation.
+**Action:** Consolidate multiple distinct sums/queries from the same table into a single `node:sqlite` query using conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`), and hoist statements to avoid N+1 and compilation overhead.
