@@ -1660,9 +1660,21 @@ route('GET', '/api/dashboard', (req, res) => {
   const stockValue = db.prepare('SELECT COALESCE(SUM(stock_qty * purchase_price),0) AS v FROM products WHERE active=1').get().v;
   const recentSales = db.prepare('SELECT id, invoice_no, customer_name, date, total, paid, (total-paid) AS due FROM sales ORDER BY id DESC LIMIT 8').all();
 
-  const accounts = db.prepare('SELECT id FROM accounts WHERE active=1').all();
-  let totalCapital = 0;
-  for (const a of accounts) totalCapital += accountBalance(a.id);
+  // ⚡ Bolt Optimization: Replaced N+1 accountBalance queries with a single aggregation query
+  // Reduces execution time significantly by minimizing db.prepare overhead in loops
+  const totalCapital = db.prepare(`
+    SELECT ROUND(COALESCE(SUM(opening_balance), 0) +
+    COALESCE((
+      SELECT SUM(
+        CASE WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount
+             WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN -amount
+             ELSE 0 END
+      ) FROM account_transactions
+      WHERE account_id IN (SELECT id FROM accounts WHERE active=1)
+    ), 0), 2) AS total_capital
+    FROM accounts
+    WHERE active=1
+  `).get().total_capital;
 
   json(res, 200, {
     date: t,
