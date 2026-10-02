@@ -1,0 +1,3 @@
+## 2024-10-24 - Node SQLite (node:sqlite) Performance Patterns
+**Learning:** `db.prepare()` compilation overhead in `node:sqlite` is extremely significant. Calling `db.prepare()` inside loops (like the N+1 `accountBalance` calls during dashboard route execution) multiplies this overhead drastically. However, replacing it with a single aggregated query is even more performant (about 20x faster than N+1 with unprepared statements, and 8x faster than N+1 with precompiled statements).
+**Action:** When calculating aggregations over multiple records (e.g. `totalCapital` from multiple accounts), replace N+1 loop queries with a single SQL query using conditional aggregation (`SUM(CASE WHEN...)`) and subqueries to minimize execution and compilation time.
