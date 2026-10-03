@@ -1,0 +1,3 @@
+## 2024-10-03 - Combine Multiple Aggregate Queries using Conditional Aggregation
+**Learning:** In Node.js applications with SQLite (node:sqlite), calculating multiple separate sums from the same table (e.g., various types of transactions for an account) via distinct queries incurs unnecessary N+1 overhead and context switches.
+**Action:** When needing distinct sums from the same table based on different row conditions, combine them into a single `db.prepare()` execution by using conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`). This maintains readability while significantly improving query performance.
