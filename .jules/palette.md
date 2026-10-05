@@ -1,0 +1,3 @@
+## 2026-10-05 - Accessibility on Dynamically Injected UI
+**Learning:** Dynamically generated vanilla JS string templates bypass static analysis and can hide accessibility issues. Small interactive elements like `&times;` (close) or `<` (previous) often lack inherent semantic meaning to screen readers if inserted as raw text strings into `innerHTML`.
+**Action:** When working with vanilla JS `innerHTML` generation in SPAs, manually trace string concatenations for button elements and proactively add `aria-label` and `title` attributes (e.g. `aria-label="Close modal"`). Include testing with keyboard navigation to ensure focus states are clearly delineated.
