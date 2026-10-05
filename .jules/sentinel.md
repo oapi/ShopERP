@@ -1,0 +1,4 @@
+## 2024-10-24 - Prevent Path Traversal and Directory Leakage
+**Vulnerability:** Path traversal exploiting partial directory matches (e.g., `startsWith(PUBLIC_DIR)` passing for sibling directories like `public-secret`) and information leakage through 403 Forbidden vs 404 Not Found response codes.
+**Learning:** In Node.js native routing with `new URL()`, url encoded path traversals combined with `decodeURIComponent()` bypass simple string prefix matching. Furthermore, explicitly returning `403 Forbidden` for out-of-bounds access leaks information about the existence of files and internal directory structure.
+**Prevention:** Use robust validation with `path.relative` to ensure paths do not escape the designated base directory (e.g., checking if it starts with `..`). Always return a generic `404 Not Found` response for path boundary violations to prevent directory structure discovery.
