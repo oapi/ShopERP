@@ -1,0 +1,3 @@
+## 2024-10-06 - Form Label Accessibility
+**Learning:** In dynamically generated Vanilla JS templates (`public/app.js`), form inputs often have `<label>` elements missing the `for` attribute to associate them with `id`s. This is an accessibility issue where screen readers cannot explicitly tie the descriptive label to the correct input field. Additionally, modal close and item removal buttons lack explicit `aria-label`s.
+**Action:** Always verify that `<label>` tags explicitly set the `for` attribute matching the nested or adjacent `<input>`, `<select>`, or `<textarea>` `id` in dynamic string templates. Ensure all icon-only buttons include an `aria-label` and `title`.
