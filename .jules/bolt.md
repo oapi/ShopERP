@@ -1,0 +1,3 @@
+## 2024-06-25 - Replace N+1 Queries with Conditional Aggregation
+**Learning:** In this `node:sqlite` environment, executing multiple separate queries using `db.prepare(...).get()` inside a tight loop or frequently called function (like `accountBalance` or `dashboard` route) creates significant overhead. Replacing multiple aggregation queries with a single query using conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`) significantly improves performance by reducing N+1 query overhead.
+**Action:** Always look for opportunities to combine multiple SUM/COUNT operations on the same table into a single query using conditional aggregation, rather than calculating them separately.
