@@ -637,7 +637,7 @@
     modal.innerHTML =
       '<div class="modal-head">' +
       '<div>' + title + '</div>' +
-      '<button class="modal-close" id="btn-modal-close">&times;</button>' +
+      '<button class="modal-close" id="btn-modal-close" aria-label="Close modal" title="Close modal">&times;</button>' +
       '</div>' +
       '<div class="modal-body">' + bodyHtml + '</div>' +
       (footerHtml ? '<div class="modal-foot">' + footerHtml + '</div>' : '');
@@ -1263,7 +1263,7 @@
           '<td><span class="txt-muted">' + item.unit + '</span></td>' +
           '<td class="num"><input type="number" min="0" step="any" class="pos-cart-price num" data-idx="' + idx + '" value="' + item.unit_price + '"></td>' +
           '<td class="num"><strong>' + fmtTk(item.qty * item.unit_price) + '</strong></td>' +
-          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '">&times;</button></td>' +
+          '<td><button class="btn sm danger btn-pos-remove" data-idx="' + idx + '" aria-label="Remove item" title="Remove item">&times;</button></td>' +
           '</tr>'
         ).join('');
       }
@@ -1932,16 +1932,16 @@
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:12px;">' +
       '<div class="form-row">' +
-      '<div class="field"><label>Supplier</label><select id="pu-supplier-id"><option value="">-- Cash Supplier / Unsaved --</option>' + suppliers.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Ref / Voucher No</label><input type="text" id="pu-ref-no" placeholder="e.g. BSRM-9812"></div>' +
-      '<div class="field"><label>Date</label><input type="date" id="pu-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="pu-supplier-id">Supplier</label><select id="pu-supplier-id"><option value="">-- Cash Supplier / Unsaved --</option>' + suppliers.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="pu-ref-no">Ref / Voucher No</label><input type="text" id="pu-ref-no" placeholder="e.g. BSRM-9812"></div>' +
+      '<div class="field"><label for="pu-date">Date</label><input type="date" id="pu-date" value="' + todayStr() + '"></div>' +
       '</div>' +
 
       '<div class="card card-body" style="background:#f8fafc;">' +
       '<div class="form-row" style="align-items:flex-end;">' +
-      '<div class="field" style="flex:2;"><label>Product</label><select id="pu-prod-id"><option value="">-- Choose Product --</option>' + products.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + ' (' + escHtml(p.brand || '') + ' ' + escHtml(p.size || '') + ') - Cost: ' + fmtTk(p.purchase_price) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Qty</label><input type="number" id="pu-qty" min="0.01" step="any" value="10"></div>' +
-      '<div class="field"><label>Unit Cost (' + curSym + ')</label><input type="number" id="pu-cost" min="0" step="any" value="0"></div>' +
+      '<div class="field" style="flex:2;"><label for="pu-prod-id">Product</label><select id="pu-prod-id"><option value="">-- Choose Product --</option>' + products.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + ' (' + escHtml(p.brand || '') + ' ' + escHtml(p.size || '') + ') - Cost: ' + fmtTk(p.purchase_price) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="pu-qty">Qty</label><input type="number" id="pu-qty" min="0.01" step="any" value="10"></div>' +
+      '<div class="field"><label for="pu-cost">Unit Cost (' + curSym + ')</label><input type="number" id="pu-cost" min="0" step="any" value="0"></div>' +
       '<div class="field"><button type="button" class="btn" id="btn-pu-add-item">+ Add</button></div>' +
       '</div>' +
       '</div>' +
@@ -1949,12 +1949,12 @@
       '<table><thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Unit Cost</th><th class="num">Line Total</th><th></th></tr></thead><tbody id="pu-items-tbody"><tr><td colspan="5" class="empty">No items added yet</td></tr></tbody></table>' +
 
       '<div class="form-row" style="margin-top:10px; align-items:center;">' +
-      '<div class="field"><label>Pay From Account</label><select id="pu-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Amount Paid (' + curSym + ')</label><div style="display:flex; gap:6px;"><input type="number" id="pu-paid" min="0" step="any" value="0"><button type="button" class="btn sm secondary" id="btn-pu-pay-full" title="Pay Total Amount">Full</button></div></div>' +
+      '<div class="field"><label for="pu-account-id">Pay From Account</label><select id="pu-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="pu-paid">Amount Paid (' + curSym + ')</label><div style="display:flex; gap:6px;"><input type="number" id="pu-paid" min="0" step="any" value="0"><button type="button" class="btn sm secondary" id="btn-pu-pay-full" title="Pay Total Amount">Full</button></div></div>' +
       '<div class="field" style="text-align:right;"><div>Total Amount: <strong id="pu-total-label" style="font-size:18px;">' + fmtTk(0) + '</strong></div></div>' +
       '</div>' +
 
-      '<div class="field"><label>Note</label><input type="text" id="pu-note" placeholder="Purchase note"></div>' +
+      '<div class="field"><label for="pu-note">Note</label><input type="text" id="pu-note" placeholder="Purchase note"></div>' +
       '</div>';
 
     const footerHtml =
@@ -1987,7 +1987,7 @@
             '<td class="num">' + it.qty + ' ' + it.unit + '</td>' +
             '<td class="num">' + fmtTk(it.unit_cost) + '</td>' +
             '<td class="num"><strong>' + fmtTk(lt) + '</strong></td>' +
-            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '">&times;</button></td>' +
+            '<td><button type="button" class="btn sm danger btn-pu-del" data-idx="' + idx + '" aria-label="Remove item" title="Remove item">&times;</button></td>' +
             '</tr>';
         }).join('');
       }
@@ -2225,26 +2225,26 @@
     const curSym = (state.settings && state.settings.currency_symbol) || '৳';
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Product Name *</label><input type="text" id="pm-name" value="' + (isEdit ? escHtml(prod.name) : '') + '" placeholder="e.g. MS Rod 12mm"></div>' +
+      '<div class="field"><label for="pm-name">Product Name *</label><input type="text" id="pm-name" value="' + (isEdit ? escHtml(prod.name) : '') + '" placeholder="e.g. MS Rod 12mm"></div>' +
       '<div class="form-row">' +
-      '<div class="field"><label>Category</label><select id="pm-category"><option value="rod" ' + (isEdit && prod.category === 'rod' ? 'selected' : '') + '>Rod</option><option value="cement" ' + (isEdit && prod.category === 'cement' ? 'selected' : '') + '>Cement</option><option value="other" ' + (isEdit && prod.category === 'other' ? 'selected' : '') + '>Other</option></select></div>' +
-      '<div class="field"><label>Brand</label><input type="text" id="pm-brand" value="' + (isEdit ? escHtml(prod.brand || '') : '') + '" placeholder="e.g. BSRM / Shah"></div>' +
-      '<div class="field"><label>Size / Spec</label><input type="text" id="pm-size" value="' + (isEdit ? escHtml(prod.size || '') : '') + '" placeholder="e.g. 12mm / 50kg bag"></div>' +
+      '<div class="field"><label for="pm-category">Category</label><select id="pm-category"><option value="rod" ' + (isEdit && prod.category === 'rod' ? 'selected' : '') + '>Rod</option><option value="cement" ' + (isEdit && prod.category === 'cement' ? 'selected' : '') + '>Cement</option><option value="other" ' + (isEdit && prod.category === 'other' ? 'selected' : '') + '>Other</option></select></div>' +
+      '<div class="field"><label for="pm-brand">Brand</label><input type="text" id="pm-brand" value="' + (isEdit ? escHtml(prod.brand || '') : '') + '" placeholder="e.g. BSRM / Shah"></div>' +
+      '<div class="field"><label for="pm-size">Size / Spec</label><input type="text" id="pm-size" value="' + (isEdit ? escHtml(prod.size || '') : '') + '" placeholder="e.g. 12mm / 50kg bag"></div>' +
       '</div>' +
 
       '<div class="form-row">' +
-      '<div class="field"><label>Unit (kg/bag/pcs/ton)</label><input type="text" id="pm-unit" value="' + (isEdit ? escHtml(prod.unit) : 'kg') + '" placeholder="kg"></div>' +
-      '<div class="field"><label>Purchase Price (' + curSym + ')</label><input type="number" id="pm-purchase-price" step="any" value="' + (isEdit ? prod.purchase_price : 0) + '"></div>' +
+      '<div class="field"><label for="pm-unit">Unit (kg/bag/pcs/ton)</label><input type="text" id="pm-unit" value="' + (isEdit ? escHtml(prod.unit) : 'kg') + '" placeholder="kg"></div>' +
+      '<div class="field"><label for="pm-purchase-price">Purchase Price (' + curSym + ')</label><input type="number" id="pm-purchase-price" step="any" value="' + (isEdit ? prod.purchase_price : 0) + '"></div>' +
       '</div>' +
 
       '<div class="form-row">' +
-      '<div class="field"><label>Retail Price (' + curSym + ')</label><input type="number" id="pm-retail-price" step="any" value="' + (isEdit ? prod.retail_price : 0) + '"></div>' +
-      '<div class="field"><label>Wholesale Price (' + curSym + ')</label><input type="number" id="pm-wholesale-price" step="any" value="' + (isEdit ? prod.wholesale_price : 0) + '"></div>' +
+      '<div class="field"><label for="pm-retail-price">Retail Price (' + curSym + ')</label><input type="number" id="pm-retail-price" step="any" value="' + (isEdit ? prod.retail_price : 0) + '"></div>' +
+      '<div class="field"><label for="pm-wholesale-price">Wholesale Price (' + curSym + ')</label><input type="number" id="pm-wholesale-price" step="any" value="' + (isEdit ? prod.wholesale_price : 0) + '"></div>' +
       '</div>' +
 
       '<div class="form-row">' +
-      '<div class="field"><label>Current Stock Qty</label><input type="number" id="pm-stock-qty" step="any" value="' + (isEdit ? prod.stock_qty : 0) + '"></div>' +
-      '<div class="field"><label>Low Stock Alert Qty</label><input type="number" id="pm-low-alert" step="any" value="' + (isEdit ? prod.low_stock_alert : 0) + '"></div>' +
+      '<div class="field"><label for="pm-stock-qty">Current Stock Qty</label><input type="number" id="pm-stock-qty" step="any" value="' + (isEdit ? prod.stock_qty : 0) + '"></div>' +
+      '<div class="field"><label for="pm-low-alert">Low Stock Alert Qty</label><input type="number" id="pm-low-alert" step="any" value="' + (isEdit ? prod.low_stock_alert : 0) + '"></div>' +
       '</div>' +
       '</div>';
 
@@ -2431,10 +2431,10 @@
     const isEdit = !!cust;
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Customer Name *</label><input type="text" id="cm-name" value="' + (isEdit ? cust.name : '') + '" placeholder="e.g. Rahim Construction"></div>' +
-      '<div class="field"><label>Phone Number</label><input type="text" id="cm-phone" value="' + (isEdit ? cust.phone || '' : '') + '" placeholder="e.g. 01711-123456"></div>' +
-      '<div class="field"><label>Address</label><input type="text" id="cm-address" value="' + (isEdit ? cust.address || '' : '') + '" placeholder="e.g. Station Road, Bogura"></div>' +
-      '<div class="field"><label>Customer Type</label><select id="cm-type"><option value="retail" ' + (isEdit && cust.type === 'retail' ? 'selected' : '') + '>Retail</option><option value="wholesale" ' + (isEdit && cust.type === 'wholesale' ? 'selected' : '') + '>Wholesale</option></select></div>' +
+      '<div class="field"><label for="cm-name">Customer Name *</label><input type="text" id="cm-name" value="' + (isEdit ? cust.name : '') + '" placeholder="e.g. Rahim Construction"></div>' +
+      '<div class="field"><label for="cm-phone">Phone Number</label><input type="text" id="cm-phone" value="' + (isEdit ? cust.phone || '' : '') + '" placeholder="e.g. 01711-123456"></div>' +
+      '<div class="field"><label for="cm-address">Address</label><input type="text" id="cm-address" value="' + (isEdit ? cust.address || '' : '') + '" placeholder="e.g. Station Road, Bogura"></div>' +
+      '<div class="field"><label for="cm-type">Customer Type</label><select id="cm-type"><option value="retail" ' + (isEdit && cust.type === 'retail' ? 'selected' : '') + '>Retail</option><option value="wholesale" ' + (isEdit && cust.type === 'wholesale' ? 'selected' : '') + '>Wholesale</option></select></div>' +
       '</div>';
 
     const footerHtml =
@@ -2601,9 +2601,9 @@
     const isEdit = !!supp;
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Supplier Name *</label><input type="text" id="sm-name" value="' + (isEdit ? supp.name : '') + '" placeholder="e.g. BSRM Steels Ltd"></div>' +
-      '<div class="field"><label>Phone</label><input type="text" id="sm-phone" value="' + (isEdit ? supp.phone || '' : '') + '" placeholder="e.g. 01800-000000"></div>' +
-      '<div class="field"><label>Address</label><input type="text" id="sm-address" value="' + (isEdit ? supp.address || '' : '') + '" placeholder="e.g. Chattogram"></div>' +
+      '<div class="field"><label for="sm-name">Supplier Name *</label><input type="text" id="sm-name" value="' + (isEdit ? supp.name : '') + '" placeholder="e.g. BSRM Steels Ltd"></div>' +
+      '<div class="field"><label for="sm-phone">Phone</label><input type="text" id="sm-phone" value="' + (isEdit ? supp.phone || '' : '') + '" placeholder="e.g. 01800-000000"></div>' +
+      '<div class="field"><label for="sm-address">Address</label><input type="text" id="sm-address" value="' + (isEdit ? supp.address || '' : '') + '" placeholder="e.g. Chattogram"></div>' +
       '</div>';
 
     const footerHtml =
@@ -2644,11 +2644,11 @@
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
       '<div><strong>' + (isCust ? 'Customer' : 'Supplier') + ':</strong> ' + escHtml(partyName) + '</div>' +
-      '<div class="field"><label>Date</label><input type="date" id="pay-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>' + (isCust ? 'Deposit To Account' : 'Pay From Account') + '</label><select id="pay-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Payment Amount (' + curSym + ') *</label><input type="number" id="pay-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Payment Method</label><select id="pay-method"><option value="cash">Cash</option><option value="bank">Bank Transfer</option><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="other">Other</option></select></div>' +
-      '<div class="field"><label>Note / Reference</label><input type="text" id="pay-note" placeholder="Receipt / Trx ID"></div>' +
+      '<div class="field"><label for="pay-date">Date</label><input type="date" id="pay-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="pay-account-id">' + (isCust ? 'Deposit To Account' : 'Pay From Account') + '</label><select id="pay-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="pay-amount">Payment Amount (' + curSym + ') *</label><input type="number" id="pay-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="pay-method">Payment Method</label><select id="pay-method"><option value="cash">Cash</option><option value="bank">Bank Transfer</option><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="other">Other</option></select></div>' +
+      '<div class="field"><label for="pay-note">Note / Reference</label><input type="text" id="pay-note" placeholder="Receipt / Trx ID"></div>' +
       '</div>';
 
     const footerHtml =
@@ -2693,13 +2693,13 @@
 
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Party Type</label><select id="gpay-type"><option value="customer">Customer (Receive Money)</option><option value="supplier">Supplier (Pay Money)</option></select></div>' +
+      '<div class="field"><label for="gpay-type">Party Type</label><select id="gpay-type"><option value="customer">Customer (Receive Money)</option><option value="supplier">Supplier (Pay Money)</option></select></div>' +
       '<div class="field" id="gpay-party-wrap"></div>' +
-      '<div class="field"><label>Account</label><select id="gpay-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Date</label><input type="date" id="gpay-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>Amount (' + curSym + ')</label><input type="number" id="gpay-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Method</label><select id="gpay-method"><option value="cash">Cash</option><option value="bank">Bank</option><option value="bkash">bKash</option><option value="nagad">Nagad</option></select></div>' +
-      '<div class="field"><label>Note</label><input type="text" id="gpay-note" placeholder="Note"></div>' +
+      '<div class="field"><label for="gpay-account-id">Account</label><select id="gpay-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="gpay-date">Date</label><input type="date" id="gpay-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="gpay-amount">Amount (' + curSym + ')</label><input type="number" id="gpay-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="gpay-method">Method</label><select id="gpay-method"><option value="cash">Cash</option><option value="bank">Bank</option><option value="bkash">bKash</option><option value="nagad">Nagad</option></select></div>' +
+      '<div class="field"><label for="gpay-note">Note</label><input type="text" id="gpay-note" placeholder="Note"></div>' +
       '</div>';
 
     const footerHtml =
@@ -2713,9 +2713,9 @@
       const wrap = $('#gpay-party-wrap');
       if (!wrap) return;
       if (type === 'customer') {
-        wrap.innerHTML = '<label>Select Customer</label><select id="gpay-party-id">' + customers.map(c => '<option value="' + c.id + '">' + escHtml(c.name) + ' (Due: ' + fmtTk(c.balance) + ')</option>').join('') + '</select>';
+        wrap.innerHTML = '<label for="gpay-party-id">Select Customer</label><select id="gpay-party-id">' + customers.map(c => '<option value="' + c.id + '">' + escHtml(c.name) + ' (Due: ' + fmtTk(c.balance) + ')</option>').join('') + '</select>';
       } else {
-        wrap.innerHTML = '<label>Select Supplier</label><select id="gpay-party-id">' + suppliers.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + ' (Due: ' + fmtTk(s.balance) + ')</option>').join('') + '</select>';
+        wrap.innerHTML = '<label for="gpay-party-id">Select Supplier</label><select id="gpay-party-id">' + suppliers.map(s => '<option value="' + s.id + '">' + escHtml(s.name) + ' (Due: ' + fmtTk(s.balance) + ')</option>').join('') + '</select>';
       }
     };
 
@@ -2934,11 +2934,11 @@
     const curSym = (state.settings && state.settings.currency_symbol) || '৳';
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Date</label><input type="date" id="ex-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>Pay From Account</label><select id="ex-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Category</label><select id="ex-cat"><option value="rent">Rent</option><option value="salary">Salary / Wages</option><option value="transport">Transport / Freight</option><option value="utility">Utility (Electricity/Water)</option><option value="other" selected>Other / Misc</option></select></div>' +
-      '<div class="field"><label>Amount (' + curSym + ') *</label><input type="number" id="ex-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Note / Description</label><input type="text" id="ex-note" placeholder="Expense description"></div>' +
+      '<div class="field"><label for="ex-date">Date</label><input type="date" id="ex-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="ex-account-id">Pay From Account</label><select id="ex-account-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="ex-cat">Category</label><select id="ex-cat"><option value="rent">Rent</option><option value="salary">Salary / Wages</option><option value="transport">Transport / Freight</option><option value="utility">Utility (Electricity/Water)</option><option value="other" selected>Other / Misc</option></select></div>' +
+      '<div class="field"><label for="ex-amount">Amount (' + curSym + ') *</label><input type="number" id="ex-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="ex-note">Note / Description</label><input type="text" id="ex-note" placeholder="Expense description"></div>' +
       '</div>';
 
     const footerHtml =
@@ -3074,12 +3074,12 @@
     const curSym = (state.settings && state.settings.currency_symbol) || '৳';
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Account Name *</label><input type="text" id="am-name" value="' + (isEdit ? escHtml(acct.name) : '') + '" placeholder="e.g. Cash at Shop / DBBL Bank"></div>' +
+      '<div class="field"><label for="am-name">Account Name *</label><input type="text" id="am-name" value="' + (isEdit ? escHtml(acct.name) : '') + '" placeholder="e.g. Cash at Shop / DBBL Bank"></div>' +
       '<div class="form-row">' +
-      '<div class="field"><label>Type</label><select id="am-type"><option value="cash" ' + (isEdit && acct.type === 'cash' ? 'selected' : '') + '>Cash Location</option><option value="bank" ' + (isEdit && acct.type === 'bank' ? 'selected' : '') + '>Bank Account</option><option value="other" ' + (isEdit && acct.type === 'other' ? 'selected' : '') + '>Other</option></select></div>' +
-      '<div class="field"><label>Account / Ref Number</label><input type="text" id="am-no" value="' + (isEdit ? escHtml(acct.account_number || '') : '') + '" placeholder="e.g. 110.120.9988"></div>' +
+      '<div class="field"><label for="am-type">Type</label><select id="am-type"><option value="cash" ' + (isEdit && acct.type === 'cash' ? 'selected' : '') + '>Cash Location</option><option value="bank" ' + (isEdit && acct.type === 'bank' ? 'selected' : '') + '>Bank Account</option><option value="other" ' + (isEdit && acct.type === 'other' ? 'selected' : '') + '>Other</option></select></div>' +
+      '<div class="field"><label for="am-no">Account / Ref Number</label><input type="text" id="am-no" value="' + (isEdit ? escHtml(acct.account_number || '') : '') + '" placeholder="e.g. 110.120.9988"></div>' +
       '</div>' +
-      '<div class="field"><label>Opening Balance (' + curSym + ')</label><input type="number" id="am-open-bal" step="any" value="' + (isEdit ? acct.opening_balance : 0) + '"></div>' +
+      '<div class="field"><label for="am-open-bal">Opening Balance (' + curSym + ')</label><input type="number" id="am-open-bal" step="any" value="' + (isEdit ? acct.opening_balance : 0) + '"></div>' +
       '</div>';
 
     const footerHtml =
@@ -3118,10 +3118,10 @@
     const curSym = (state.settings && state.settings.currency_symbol) || '৳';
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Deposit To Account *</label><select id="dep-acct-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Date</label><input type="date" id="dep-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>Deposit Amount (' + curSym + ') *</label><input type="number" id="dep-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Note / Source</label><input type="text" id="dep-note" placeholder="e.g. Owner capital injection"></div>' +
+      '<div class="field"><label for="dep-acct-id">Deposit To Account *</label><select id="dep-acct-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="dep-date">Date</label><input type="date" id="dep-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="dep-amount">Deposit Amount (' + curSym + ') *</label><input type="number" id="dep-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="dep-note">Note / Source</label><input type="text" id="dep-note" placeholder="e.g. Owner capital injection"></div>' +
       '</div>';
 
     const footerHtml =
@@ -3158,10 +3158,10 @@
     const curSym = (state.settings && state.settings.currency_symbol) || '৳';
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
-      '<div class="field"><label>Withdraw From Account *</label><select id="with-acct-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>Date</label><input type="date" id="with-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>Withdrawal Amount (' + curSym + ') *</label><input type="number" id="with-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Note / Purpose</label><input type="text" id="with-note" placeholder="e.g. Owner drawing"></div>' +
+      '<div class="field"><label for="with-acct-id">Withdraw From Account *</label><select id="with-acct-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' (' + escHtml(a.type) + ') — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="with-date">Date</label><input type="date" id="with-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="with-amount">Withdrawal Amount (' + curSym + ') *</label><input type="number" id="with-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="with-note">Note / Purpose</label><input type="text" id="with-note" placeholder="e.g. Owner drawing"></div>' +
       '</div>';
 
     const footerHtml =
@@ -3199,12 +3199,12 @@
     const bodyHtml =
       '<div style="display:flex; flex-direction:column; gap:10px;">' +
       '<div class="form-row">' +
-      '<div class="field"><label>From Account (Debit) *</label><select id="xfer-from-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>To Account (Credit) *</label><select id="xfer-to-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="xfer-from-id">From Account (Debit) *</label><select id="xfer-from-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="xfer-to-id">To Account (Credit) *</label><select id="xfer-to-id">' + accounts.map(a => '<option value="' + a.id + '">' + escHtml(a.name) + ' — Bal: ' + fmtTk(a.current_balance) + '</option>').join('') + '</select></div>' +
       '</div>' +
-      '<div class="field"><label>Date</label><input type="date" id="xfer-date" value="' + todayStr() + '"></div>' +
-      '<div class="field"><label>Transfer Amount (' + curSym + ') *</label><input type="number" id="xfer-amount" min="0.01" step="any" placeholder="0.00"></div>' +
-      '<div class="field"><label>Note / Reference</label><input type="text" id="xfer-note" placeholder="e.g. Deposited shop cash to bank"></div>' +
+      '<div class="field"><label for="xfer-date">Date</label><input type="date" id="xfer-date" value="' + todayStr() + '"></div>' +
+      '<div class="field"><label for="xfer-amount">Transfer Amount (' + curSym + ') *</label><input type="number" id="xfer-amount" min="0.01" step="any" placeholder="0.00"></div>' +
+      '<div class="field"><label for="xfer-note">Note / Reference</label><input type="text" id="xfer-note" placeholder="e.g. Deposited shop cash to bank"></div>' +
       '</div>';
 
     const footerHtml =
