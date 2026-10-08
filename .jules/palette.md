@@ -1,0 +1,3 @@
+## 2024-10-08 - Accessible Icon-only Buttons in String Templates
+**Learning:** Dynamically generated Vanilla JS string templates bypass standard static analysis tools for accessibility linting. As a result, critical interaction points like icon-only buttons (`&times;` close buttons or `⏭` pagination arrows) may easily miss required `aria-label` and `title` attributes.
+**Action:** When manually adding new elements to JS string templates, or when performing regular code reviews on template modifications, explicitly verify that any interactive element that lacks visible descriptive text is accompanied by appropriate `aria-label` and `title` attributes.
