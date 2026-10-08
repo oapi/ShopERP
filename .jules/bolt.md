@@ -1,0 +1,3 @@
+## 2023-10-25 - Combined Conditional Aggregation Queries in SQLite
+**Learning:** In the `accountBalance` function, executing four separate `SUM()` queries across multiple `node:sqlite` `.get()` calls for different transaction types introduces significant N+1-style query execution overhead due to crossing the native Node/SQLite bridge multiple times.
+**Action:** Consolidate multiple distinct sum queries targeting the same tables into a single query using conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`). This reduces overhead significantly while providing the same results.
