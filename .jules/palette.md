@@ -1,0 +1,3 @@
+## 2024-10-09 - Accessible Icon-Only Buttons in JS Templates
+**Learning:** In dynamically generated Vanilla JS string templates (like those in `app.js`), typical static analysis linting for accessibility is often bypassed. This makes it easy to miss crucial accessibility attributes like `aria-label` and `title` on icon-only buttons (e.g., the `&times;` modal close or remove item buttons).
+**Action:** Always manually search for and verify icon-only buttons, especially in string templates, to ensure proper `aria-label` and `title` attributes are present. Include accessibility checks in UI tests where possible.
