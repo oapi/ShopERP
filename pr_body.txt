@@ -1,0 +1,4 @@
+💡 What: Added `aria-label` and `title` attributes to icon-only buttons (`&times;`) in the JS string templates.
+🎯 Why: Icon-only buttons without accessible names are invisible to screen readers, and lack tooltips for sighted users.
+📸 Before/After: N/A - visual changes only to tooltips.
+♿ Accessibility: Improved keyboard and screen reader accessibility for modal and item removal interactions.
