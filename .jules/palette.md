@@ -1,0 +1,3 @@
+## 2024-10-10 - Vanilla JS String Templates Bypass Static Linters
+**Learning:** Dynamically generated Vanilla JS string templates (like those used extensively in `public/app.js` for innerHTML assignments) bypass standard static analysis tools for accessibility. Because the HTML structure exists only within JS strings until runtime, linters cannot flag missing `aria-label` or `title` attributes on elements like icon-only buttons (e.g., `&times;` for closing modals or deleting items).
+**Action:** When working in this codebase, always manually review and verify all dynamically generated interactive elements (especially icon-only buttons) to ensure proper accessibility attributes (`aria-label`, `title`) are explicitly included in the string templates.
