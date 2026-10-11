@@ -1,0 +1,3 @@
+## 2024-10-11 - Combine aggregate queries with conditional aggregation to fix N+1 in account balances
+**Learning:** When calculating multiple distinct sums from the same table (like different transaction types in `accountBalance`), making separate `SUM(...)` queries for each condition causes significant overhead and acts similarly to an N+1 query problem, especially when called repeatedly in loops (like the dashboard fetching all balances).
+**Action:** Use conditional aggregation (`SUM(CASE WHEN condition THEN amount ELSE 0 END)`) to combine multiple sums from the same table into a single `db.prepare().get()` query, reducing the number of queries executed by the SQLite engine natively.
