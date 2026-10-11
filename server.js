@@ -191,38 +191,23 @@ function supplierBalance(id) {
   return Math.round((s - p) * 100) / 100;
 }
 
+// ⚡ Bolt Optimization: Combine 4 aggregate queries into a single query using conditional aggregation
 function accountBalance(acctId) {
   const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
   if (!acct) return 0;
   const openBal = acct.opening_balance;
 
-  const inflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
+  const stats = db.prepare(`
+    SELECT
+      SUM(CASE WHEN type IN ('deposit', 'transfer_in', 'sale_collection') THEN amount ELSE 0 END) AS inflow,
+      SUM(CASE WHEN type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense') THEN amount ELSE 0 END) AS outflow,
+      SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer') THEN amount ELSE 0 END) AS pymtCust,
+      SUM(CASE WHEN type = 'due_payment' AND ref_type = 'payment' AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier') THEN amount ELSE 0 END) AS pymtSupp
     FROM account_transactions
-    WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
+    WHERE account_id = ?
+  `).get(acctId);
 
-  const outflow = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
-    SELECT COALESCE(SUM(amount),0) AS total
-    FROM account_transactions
-    WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
-      AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
-
-  const net = openBal + inflow + pymtCust - outflow - pymtSupp;
+  const net = openBal + (stats.inflow || 0) + (stats.pymtCust || 0) - (stats.outflow || 0) - (stats.pymtSupp || 0);
   return Math.round(net * 100) / 100;
 }
 
