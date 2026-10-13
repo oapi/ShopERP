@@ -1,0 +1,5 @@
+🚨 Severity: CRITICAL
+💡 Vulnerability: A path traversal vulnerability was found in the static file serving mechanism. The boundary check used a flawed `startsWith` comparison on a directory path without a trailing slash. Furthermore, decoding the URL allowed encoded traversal segments (`%2E%2E%2F`) to become active.
+🎯 Impact: This allowed attackers to escape the intended public directory and read arbitrary files on the system that the application process had permissions to.
+🔧 Fix: Replaced the brittle `startsWith` prefix check with `path.relative()` to accurately compute the traversal depth and actively validated that the resolved file path did not escape the intended boundary.
+✅ Verification: Ran regression verification testing by attempting directory traversal using curl with the `--path-as-is` flag and verified traversal attempts now successfully return a secure 404 response instead of leaking the file.
