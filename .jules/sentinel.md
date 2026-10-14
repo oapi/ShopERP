@@ -1,0 +1,4 @@
+## 2026-10-14 - Fix path traversal vulnerability in static file serving
+**Vulnerability:** The application used `startsWith(PUBLIC_DIR)` to validate file paths when serving static files. Since `PUBLIC_DIR` was `/app/public` (without a trailing slash), requests like `/%2e%2e%2fpublic-secret/test.txt` would resolve to `/app/public-secret/test.txt`. `startsWith` evaluated `"/app/public-secret/test.txt".startsWith("/app/public")` as `true`, allowing access to sibling directories.
+**Learning:** `startsWith` on directory paths without a trailing separator is vulnerable to partial folder name matches. Using `path.relative(PUBLIC_DIR, filePath)` and checking if it starts with `..` or is an absolute path is the robust way to ensure a path stays within bounds.
+**Prevention:** Always use proper path boundary validation (like `path.relative`) rather than simple string prefix matching when handling file paths derived from user input.
