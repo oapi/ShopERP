@@ -1,0 +1,3 @@
+## 2024-10-14 - Icon-only Buttons Accessibility
+**Learning:** Dynamically generated HTML templates in vanilla JS applications bypass static analysis linters, making them prone to missing essential accessibility attributes on small UI elements like modal closes or item removals (`&times;`). Providing both `aria-label` (for screen readers) and `title` (for mouse hover tooltips) is critical for a universally accessible micro-interaction.
+**Action:** Always manually search for `&times;` or icon-only buttons in dynamically rendered strings and ensure they contain both `aria-label` and `title` attributes.
