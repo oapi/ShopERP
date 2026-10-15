@@ -1,0 +1,5 @@
+🚨 Severity: CRITICAL
+💡 Vulnerability: The static file serving route used `filePath.startsWith(PUBLIC_DIR)` which is vulnerable to partial directory matching because `PUBLIC_DIR` lacked a trailing slash. This allowed an attacker to access sibling directories (like `/app/public-secret`) via `../public-secret/file.txt`.
+🎯 Impact: Attackers could read sensitive files located in sibling directories to the intended public directory.
+🔧 Fix: Replaced `startsWith` with `path.relative()` to strictly verify that the requested file does not resolve outside the `PUBLIC_DIR`. Updated the error response to 404 instead of 403 to prevent directory structure enumeration.
+✅ Verification: Tested via `curl --path-as-is http://localhost:3000/../public-secret/secret.txt` which now returns a 404. Verified that valid assets like `index.html` still load correctly.
