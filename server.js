@@ -180,14 +180,22 @@ function requireAdmin(req, res) {
 }
 
 // Balance helpers
+// Hoisted db.prepare statements for balances out of functions to avoid recompiling queries on every invocation.
+const getCustomerSalesDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const getCustomerPaymentsStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
+
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
+  const s = getCustomerSalesDueStmt.get(id).due;
+  const p = getCustomerPaymentsStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
+
+const getSupplierPurchasesDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const getSupplierPaymentsStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
+
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = getSupplierPurchasesDueStmt.get(id).due;
+  const p = getSupplierPaymentsStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
