@@ -1,0 +1,4 @@
+## 2026-10-17 - Fix Path Traversal in Static File Handler
+**Vulnerability:** The static file handler in `server.js` was vulnerable to path traversal because it only verified if the resolved `filePath` started with `PUBLIC_DIR` (e.g. `if (!filePath.startsWith(PUBLIC_DIR))`). By URL-encoding traversal sequences like `/%2e%2e%2f`, an attacker could access files in sibling directories (like `/app/public-secret/secret.txt`) since `/app/public-secret` starts with `/app/public`.
+**Learning:** `startsWith` is insufficient for enforcing path boundaries if the directory path lacks a trailing slash. The `node:url` and `node:path` modules behave uniquely when resolving URL-encoded characters that are later decoded before normalization.
+**Prevention:** Use `path.relative()` to accurately determine if the target path resolves outside the intended base directory. Specifically, verify that `relativePath !== '..'`, doesn't start with `..' + path.sep`, and isn't absolute.
