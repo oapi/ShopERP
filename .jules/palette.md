@@ -1,0 +1,3 @@
+## 2024-05-18 - Accessibility for Dynamically Generated Icon-Only Buttons
+**Learning:** Dynamically generated HTML strings in vanilla JS single-page applications often bypass standard static analysis tools for accessibility, leading to missing `aria-label` and `title` attributes on repetitive elements like icon-only buttons (`&times;` for modal closes or cart item removals).
+**Action:** When working with vanilla JS template strings, manually verify and ensure that all icon-only buttons injected into the DOM explicitly define `aria-label` and `title` attributes to maintain accessibility compliance for screen readers and provide hover context for sighted users.
