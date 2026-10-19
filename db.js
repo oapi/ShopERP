@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'sales_manager',    -- admin | sales_manager
   name TEXT NOT NULL,
   active INTEGER NOT NULL DEFAULT 1,
@@ -193,18 +194,23 @@ addColumnIfNotExists('payments', 'account_id INTEGER REFERENCES accounts(id)');
 addColumnIfNotExists('payments', 'created_by INTEGER REFERENCES users(id)');
 addColumnIfNotExists('expenses', 'account_id INTEGER REFERENCES accounts(id)');
 addColumnIfNotExists('expenses', 'created_by INTEGER REFERENCES users(id)');
+addColumnIfNotExists('users', "salt TEXT NOT NULL DEFAULT 'islam_enterprise_salt'");
 
 // Password hashing helper
-function hashPassword(pwd) {
-  return crypto.createHash('sha256').update(pwd + 'islam_enterprise_salt').digest('hex');
+function hashPassword(pwd, salt) {
+  return crypto.createHash('sha256').update(pwd + salt).digest('hex');
 }
 
 // Seed Users
 const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
 if (userCount === 0) {
-  const insUser = db.prepare('INSERT INTO users (username, password_hash, role, name) VALUES (?,?,?,?)');
-  insUser.run('admin', hashPassword('admin123'), 'admin', 'System Admin');
-  insUser.run('sales', hashPassword('sales123'), 'sales_manager', 'Sales Manager');
+  const insUser = db.prepare('INSERT INTO users (username, password_hash, salt, role, name) VALUES (?,?,?,?,?)');
+
+  const adminSalt = crypto.randomBytes(16).toString('hex');
+  insUser.run('admin', hashPassword('admin123', adminSalt), adminSalt, 'admin', 'System Admin');
+
+  const salesSalt = crypto.randomBytes(16).toString('hex');
+  insUser.run('sales', hashPassword('sales123', salesSalt), salesSalt, 'sales_manager', 'Sales Manager');
 }
 
 // Seed Capital / Cash Accounts
