@@ -1573,34 +1573,42 @@ route('POST', '/api/bulk-delete/:entity', async (req, res, p) => {
           deletedCount++;
         }
       } else if (entity === 'sales') {
-        const getItems = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?');
         const incStock = db.prepare('UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?');
-        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'sale' AND ref_id = ?");
-        const delItems = db.prepare('DELETE FROM sale_items WHERE sale_id = ?');
-        const delSale = db.prepare('DELETE FROM sales WHERE id = ?');
 
-        for (const id of ids) {
-          const items = getItems.all(id);
+        const MAX_BIND_VARS = 999;
+        for (let i = 0; i < ids.length; i += MAX_BIND_VARS) {
+          const chunkIds = ids.slice(i, i + MAX_BIND_VARS);
+          if (chunkIds.length === 0) continue;
+
+          const placeholders = chunkIds.map(() => '?').join(',');
+
+          const items = db.prepare(`SELECT * FROM sale_items WHERE sale_id IN (${placeholders})`).all(...chunkIds);
           for (const it of items) incStock.run(it.qty, it.product_id);
-          delTx.run(id);
-          delItems.run(id);
-          delSale.run(id);
-          deletedCount++;
+
+          db.prepare(`DELETE FROM account_transactions WHERE ref_type = 'sale' AND ref_id IN (${placeholders})`).run(...chunkIds);
+          db.prepare(`DELETE FROM sale_items WHERE sale_id IN (${placeholders})`).run(...chunkIds);
+          db.prepare(`DELETE FROM sales WHERE id IN (${placeholders})`).run(...chunkIds);
+
+          deletedCount += chunkIds.length;
         }
       } else if (entity === 'purchases') {
-        const getItems = db.prepare('SELECT * FROM purchase_items WHERE purchase_id = ?');
         const decStock = db.prepare('UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?');
-        const delTx = db.prepare("DELETE FROM account_transactions WHERE ref_type = 'purchase' AND ref_id = ?");
-        const delItems = db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?');
-        const delPu = db.prepare('DELETE FROM purchases WHERE id = ?');
 
-        for (const id of ids) {
-          const items = getItems.all(id);
+        const MAX_BIND_VARS = 999;
+        for (let i = 0; i < ids.length; i += MAX_BIND_VARS) {
+          const chunkIds = ids.slice(i, i + MAX_BIND_VARS);
+          if (chunkIds.length === 0) continue;
+
+          const placeholders = chunkIds.map(() => '?').join(',');
+
+          const items = db.prepare(`SELECT * FROM purchase_items WHERE purchase_id IN (${placeholders})`).all(...chunkIds);
           for (const it of items) decStock.run(it.qty, it.product_id);
-          delTx.run(id);
-          delItems.run(id);
-          delPu.run(id);
-          deletedCount++;
+
+          db.prepare(`DELETE FROM account_transactions WHERE ref_type = 'purchase' AND ref_id IN (${placeholders})`).run(...chunkIds);
+          db.prepare(`DELETE FROM purchase_items WHERE purchase_id IN (${placeholders})`).run(...chunkIds);
+          db.prepare(`DELETE FROM purchases WHERE id IN (${placeholders})`).run(...chunkIds);
+
+          deletedCount += chunkIds.length;
         }
       } else {
         throw new Error('Invalid bulk delete entity');
