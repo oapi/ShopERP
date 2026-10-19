@@ -1762,14 +1762,6 @@ function startServer(portToTry) {
   });
 
   server.listen(portToTry, () => {
-    console.log('=================================================================');
-    console.log('  ✔ CoreTrade ERP — Islam Enterprise');
-    console.log('  ✔ Quality Materials, Lasting Trust');
-    console.log('-----------------------------------------------------------------');
-    console.log(`  🚀 Portable System Ready!`);
-    console.log(`  🌐 Web Address: http://localhost:${portToTry}`);
-    console.log(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
-    console.log('=================================================================');
   });
 }
 
