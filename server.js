@@ -1754,7 +1754,7 @@ function startServer(portToTry) {
   server.removeAllListeners('error');
   server.on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
-      console.log(`  ⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
+      console.info(`  ⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
       startServer(portToTry + 1);
     } else {
       console.error('Server error:', e);
@@ -1762,14 +1762,14 @@ function startServer(portToTry) {
   });
 
   server.listen(portToTry, () => {
-    console.log('=================================================================');
-    console.log('  ✔ CoreTrade ERP — Islam Enterprise');
-    console.log('  ✔ Quality Materials, Lasting Trust');
-    console.log('-----------------------------------------------------------------');
-    console.log(`  🚀 Portable System Ready!`);
-    console.log(`  🌐 Web Address: http://localhost:${portToTry}`);
-    console.log(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
-    console.log('=================================================================');
+    console.info('=================================================================');
+    console.info('  ✔ CoreTrade ERP — Islam Enterprise');
+    console.info('  ✔ Quality Materials, Lasting Trust');
+    console.info('-----------------------------------------------------------------');
+    console.info('  🚀 Portable System Ready!');
+    console.info(`  🌐 Web Address: http://localhost:${portToTry}`);
+    console.info(`  💾 Database:   ${path.join(__dirname, 'data', 'shop.db')}`);
+    console.info('=================================================================');
   });
 }
 
