@@ -1754,7 +1754,7 @@ function startServer(portToTry) {
   server.removeAllListeners('error');
   server.on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
-      console.log(`  ⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
+      console.warn(`  ⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
       startServer(portToTry + 1);
     } else {
       console.error('Server error:', e);
