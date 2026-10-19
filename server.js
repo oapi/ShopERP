@@ -1222,8 +1222,13 @@ route('POST', '/api/sales', async (req, res) => {
   try {
     const sale = transaction(() => {
       let subtotal = 0;
+      const uniqueProductIds = [...new Set(items.map(it => it.product_id))];
+      const placeholders = uniqueProductIds.map(() => '?').join(',');
+      const products = db.prepare(`SELECT * FROM products WHERE id IN (${placeholders})`).all(...uniqueProductIds);
+      const productsById = Object.fromEntries(products.map(p => [p.id, p]));
+
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = productsById[it.product_id];
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1342,8 +1347,13 @@ route('POST', '/api/purchases', async (req, res) => {
   try {
     const purchase = transaction(() => {
       let total = 0;
+      const uniqueProductIds = [...new Set(items.map(it => it.product_id))];
+      const placeholders = uniqueProductIds.map(() => '?').join(',');
+      const products = db.prepare(`SELECT * FROM products WHERE id IN (${placeholders})`).all(...uniqueProductIds);
+      const productsById = Object.fromEntries(products.map(p => [p.id, p]));
+
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = productsById[it.product_id];
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
