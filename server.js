@@ -284,7 +284,12 @@ function queryPaginated(q, {
   const sortDir = (reqSortDir === 'ASC' || reqSortDir === 'DESC') ? reqSortDir : defaultSortDir;
 
   const fromParts = fromSql.trim().split(/\s+/);
-  const tableOrAlias = fromParts.length > 1 ? fromParts[fromParts.length - 1] : fromParts[0];
+  // Extract table alias by checking the first couple words, handling JOINs.
+  // If fromSql is "sales s" it gets "s". If "payments p LEFT JOIN..." it gets "p".
+  let tableOrAlias = fromParts[0];
+  if (fromParts.length > 1 && !fromParts[1].toUpperCase().startsWith('JOIN') && !fromParts[1].toUpperCase().startsWith('LEFT') && !fromParts[1].toUpperCase().startsWith('RIGHT') && !fromParts[1].toUpperCase().startsWith('INNER')) {
+    tableOrAlias = fromParts[1];
+  }
   const orderStr = ` ORDER BY ${sortColExpr} ${sortDir}, ${tableOrAlias}.id ${sortDir}`;
 
   // Fetch paginated data
@@ -1418,28 +1423,22 @@ route('DELETE', '/api/purchases/:id', (req, res, p) => {
 route('GET', '/api/payments', (req, res, params, q) => {
   if (!requireAuth(req, res)) return;
   const allowedSortCols = {
-    date: 'date', amount: 'amount', method: 'method', party_type: 'party_type', party_id: 'party_id', id: 'id'
+    date: 'p.date', amount: 'p.amount', method: 'p.method', party_type: 'p.party_type', party_id: 'p.party_id', id: 'p.id'
   };
   const result = queryPaginated(q, {
-    fromSql: 'payments',
-    selectCols: '*',
+    fromSql: "payments p LEFT JOIN customers c ON p.party_type = 'customer' AND p.party_id = c.id LEFT JOIN suppliers s ON p.party_type = 'supplier' AND p.party_id = s.id",
+    selectCols: "p.*, COALESCE(c.name, s.name, '#' || p.party_id) AS party_name",
     allowedSortCols,
     defaultSortCol: 'date',
     defaultSortDir: 'DESC',
-    searchCols: ['note', 'method'],
+    searchCols: ['p.note', 'p.method'],
     buildWhere: (clauses, args) => {
-      if (q.get('party_type')) { clauses.push('party_type = ?'); args.push(q.get('party_type')); }
-      if (q.get('party_id')) { clauses.push('party_id = ?'); args.push(q.get('party_id')); }
-      if (q.get('from')) { clauses.push('date >= ?'); args.push(q.get('from')); }
-      if (q.get('to')) { clauses.push('date <= ?'); args.push(q.get('to')); }
+      if (q.get('party_type')) { clauses.push('p.party_type = ?'); args.push(q.get('party_type')); }
+      if (q.get('party_id')) { clauses.push('p.party_id = ?'); args.push(q.get('party_id')); }
+      if (q.get('from')) { clauses.push('p.date >= ?'); args.push(q.get('from')); }
+      if (q.get('to')) { clauses.push('p.date <= ?'); args.push(q.get('to')); }
     }
   });
-  const cn = db.prepare('SELECT name FROM customers WHERE id = ?');
-  const sn = db.prepare('SELECT name FROM suppliers WHERE id = ?');
-  for (const r of result.data) {
-    const rec = r.party_type === 'customer' ? cn.get(r.party_id) : sn.get(r.party_id);
-    r.party_name = rec ? rec.name : '#' + r.party_id;
-  }
   json(res, 200, result);
 });
 
