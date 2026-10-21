@@ -180,14 +180,22 @@ function requireAdmin(req, res) {
 }
 
 // Balance helpers
+// ⚡ Bolt: Hoist db.prepare() to prevent recompilation in loops (N+1 overhead), reducing API latency significantly.
+const getCustomerSalesDue = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const getCustomerPayments = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
+
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
+  const s = getCustomerSalesDue.get(id).due;
+  const p = getCustomerPayments.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
+
+const getSupplierPurchasesDue = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const getSupplierPayments = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
+
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = getSupplierPurchasesDue.get(id).due;
+  const p = getSupplierPayments.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
