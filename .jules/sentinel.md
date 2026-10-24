@@ -1,0 +1,4 @@
+## 2023-10-24 - Path Traversal bypass via `startsWith`
+**Vulnerability:** The static file handler in `server.js` validates file paths using `filePath.startsWith(PUBLIC_DIR)`. Because `PUBLIC_DIR` doesn't have a trailing slash (e.g. `/app/public`), a malicious path like `/../public_secret/foo.txt` normalizes to `/app/public_secret/foo.txt`, which successfully passes `startsWith('/app/public')` despite being entirely outside the public directory.
+**Learning:** `startsWith` is vulnerable to prefix matching attacks when validating directory boundaries if the prefix lacks a trailing directory separator.
+**Prevention:** Use `path.relative` to ensure the requested path is actually a descendant of the target directory (e.g. not starting with `..` and not an absolute path). Or, ensure the base path has a trailing slash.
