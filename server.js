@@ -179,15 +179,21 @@ function requireAdmin(req, res) {
   return user;
 }
 
-// Balance helpers
+// Balance helpers - Performance Optimization: Hoist prepared statements
+// to avoid recompilation overhead in loops on every execution
+const _custDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const _custPymtStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
+  const s = _custDueStmt.get(id).due;
+  const p = _custPymtStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
+
+const _suppDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const _suppPymtStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = _suppDueStmt.get(id).due;
+  const p = _suppPymtStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
