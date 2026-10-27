@@ -1,0 +1,4 @@
+## 2024-05-24 - Fix Prefix-Matching Path Traversal Vulnerability
+**Vulnerability:** The static file server used `filePath.startsWith(PUBLIC_DIR)` for boundary enforcement. This is vulnerable to prefix-matching path traversal, as a requested path like `/../public_secret` normalizes to `/path/to/public_secret`, which successfully starts with the prefix `/path/to/public`, exposing sibling directories.
+**Learning:** Checking path containment with simple string prefixes without a trailing slash is insecure, and returning a 403 can leak directory existence. `path.relative()` is required to correctly compute if a normalized path breaks out of the intended directory tree.
+**Prevention:** Always use `path.relative(ROOT, filePath)` and ensure the result does not start with `..` and is not absolute. Additionally, return a generic 404 rather than 403 to prevent path existence leakage.
