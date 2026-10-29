@@ -637,7 +637,7 @@
     modal.innerHTML =
       '<div class="modal-head">' +
       '<div>' + title + '</div>' +
-      '<button class="modal-close" id="btn-modal-close">&times;</button>' +
+      '<button class="modal-close" id="btn-modal-close" aria-label="Close modal">&times;</button>' +
       '</div>' +
       '<div class="modal-body">' + bodyHtml + '</div>' +
       (footerHtml ? '<div class="modal-foot">' + footerHtml + '</div>' : '');
