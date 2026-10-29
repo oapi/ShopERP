@@ -145,17 +145,20 @@ function toCSV(rows, headers) {
 }
 
 // Authentication & RBAC helpers
+// ⚡ Bolt: Hoisted prepared statement to module scope to avoid recompilation on every auth request
+const getAuthUserStmt = db.prepare(`
+  SELECT u.id, u.username, u.name, u.role
+  FROM sessions s
+  JOIN users u ON u.id = s.user_id
+  WHERE s.token = ? AND u.active = 1
+`);
+
 function getAuthUser(req) {
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token) return null;
 
-  const row = db.prepare(`
-    SELECT u.id, u.username, u.name, u.role
-    FROM sessions s
-    JOIN users u ON u.id = s.user_id
-    WHERE s.token = ? AND u.active = 1
-  `).get(token);
+  const row = getAuthUserStmt.get(token);
 
   return row || null;
 }
@@ -180,14 +183,22 @@ function requireAdmin(req, res) {
 }
 
 // Balance helpers
+// ⚡ Bolt: Hoisted prepared statements to module scope to avoid N recompilations in paginated lists
+const custSalesDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const custPaymentsStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
+
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
+  const s = custSalesDueStmt.get(id).due;
+  const p = custPaymentsStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
+
+const suppPurchasesDueStmt = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const suppPaymentsStmt = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
+
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = suppPurchasesDueStmt.get(id).due;
+  const p = suppPaymentsStmt.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
