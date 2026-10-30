@@ -19,6 +19,9 @@ const MIME = {
   '.csv': 'text/csv; charset=utf-8',
 };
 
+// ⚡ Bolt: Hoisted product lookup to module scope so it's compiled exactly once at application startup.
+const getProduct = db.prepare('SELECT * FROM products WHERE id = ?');
+
 // ---------- helpers ----------
 function json(res, code, data) {
   const body = JSON.stringify(data);
@@ -1223,7 +1226,7 @@ route('POST', '/api/sales', async (req, res) => {
     const sale = transaction(() => {
       let subtotal = 0;
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProduct.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_price = num(it.unit_price);
@@ -1343,7 +1346,7 @@ route('POST', '/api/purchases', async (req, res) => {
     const purchase = transaction(() => {
       let total = 0;
       const prepared = items.map(it => {
-        const prod = db.prepare('SELECT * FROM products WHERE id = ?').get(it.product_id);
+        const prod = getProduct.get(it.product_id);
         if (!prod) throw new Error('Product not found: ' + it.product_id);
         const qty = num(it.qty);
         const unit_cost = num(it.unit_cost);
