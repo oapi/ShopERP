@@ -1,0 +1,4 @@
+## 2026-10-31 - Path Traversal (Prefix Matching) in Static File Serving
+**Vulnerability:** The static file server used `filePath.startsWith(PUBLIC_DIR)` for boundary checks. Because `new URL()` in Node.js does not decode `%2f` (slash), `decodeURIComponent` re-introduced path traversal sequences (like `../`). A path like `/%2e%2e%2fpublic_secret/` bypassed `URL()` parsing, got decoded to `../public_secret/`, normalized to `/app/public_secret`, and bypassed the check because it still started with `/app/public`.
+**Learning:** Prefix matching (e.g. `startsWith`) without appending a trailing directory separator (e.g. `path.sep`) on path strings allows access to sibling directories that share the same string prefix. Additionally, returning a 403 on traversal attempts leaks the existence of the file.
+**Prevention:** Use `path.relative(PUBLIC_DIR, filePath)` and ensure it doesn't start with `..` and is not absolute. Also return a 404 to avoid leaking path existence.
