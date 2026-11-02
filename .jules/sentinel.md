@@ -1,0 +1,4 @@
+## 2024-05-18 - Path Traversal bypass via URL encoding and prefix matching
+**Vulnerability:** Prefix-matching path traversal bypass in Node.js static file server. The check `filePath.startsWith(PUBLIC_DIR)` was vulnerable to path traversal because `new URL(req.url)` does not decode `%2f` (slash). A request like `/%2e%2e%2fpublic_secret/secret.txt` would bypass the prefix check because it starts with `/app/public_secret` instead of `/app/public/`.
+**Learning:** `startsWith` on file paths is insecure without a trailing slash (e.g. `/app/public` matches `/app/public_secret`). Node.js `decodeURIComponent` after `new URL` can reintroduce traversal vectors.
+**Prevention:** Always use `path.relative()` to compute the relative path from the base directory, and ensure it does not start with `..` and is not an absolute path.
