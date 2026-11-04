@@ -1,0 +1,4 @@
+## 2026-11-04 - Fix Path Traversal in Static File Handler
+**Vulnerability:** Node.js static file serving validated boundaries using `filePath.startsWith(PUBLIC_DIR)` without a trailing slash, which is vulnerable to prefix-matching path traversal. Combined with `decodeURIComponent()` being applied before normalization, paths like `/%2e%2e%2fpublic_secret` successfully traversed outside `public` and were incorrectly validated since they started with the string prefix of `PUBLIC_DIR` (e.g. `/app/public_secret` starts with `/app/public`).
+**Learning:** Using string matching for path validation is inherently insecure against path traversal, especially when URL decoding and path normalization interact unexpectedly.
+**Prevention:** Always use `path.relative()` and check that the resulting path does not start with `..` and is not absolute to enforce directory boundaries reliably. Return generic 404s for boundary violations to avoid existence leakage.
