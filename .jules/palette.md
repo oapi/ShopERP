@@ -1,0 +1,3 @@
+## 2025-02-18 - Missing ARIA labels on dynamic icon-only buttons
+**Learning:** In dynamically constructed HTML templates (like modal close buttons or table row delete buttons), standard accessibility attributes like `aria-label` are frequently omitted because the HTML is generated as raw strings. Icon-only buttons (using `&times;`) must have an `aria-label` for screen reader users to understand their purpose.
+**Action:** Added `aria-label` attributes to the modal close button, POS cart remove item button, and Purchase cart delete item button in `public/app.js`. Always check for missing ARIA labels on icon-only interactive elements in dynamic template literals.
