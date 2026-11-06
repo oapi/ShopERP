@@ -637,7 +637,7 @@
     modal.innerHTML =
       '<div class="modal-head">' +
       '<div>' + title + '</div>' +
-      '<button class="modal-close" id="btn-modal-close">&times;</button>' +
+      '<button class="modal-close" id="btn-modal-close" aria-label="Close modal">&times;</button>' +
       '</div>' +
       '<div class="modal-body">' + bodyHtml + '</div>' +
       (footerHtml ? '<div class="modal-foot">' + footerHtml + '</div>' : '');
@@ -793,6 +793,10 @@
     if (loginForm) {
       loginForm.onsubmit = async (e) => {
         e.preventDefault();
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '⏳ Signing in...';
+        submitBtn.disabled = true;
         const username = $('#login-username').value.trim();
         const password = $('#login-password').value;
         try {
@@ -814,6 +818,9 @@
           switchView(initialView);
         } catch (err) {
           // Toast handled by api()
+        } finally {
+          submitBtn.innerHTML = originalBtnText;
+          submitBtn.disabled = false;
         }
       };
     }
