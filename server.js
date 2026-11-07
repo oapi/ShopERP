@@ -180,47 +180,56 @@ function requireAdmin(req, res) {
 }
 
 // Balance helpers
+// Optimization: Hoisted db.prepare() to module scope to prevent recompiling SQL inside loops
+const stmtCustomerSalesDue = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?');
+const stmtCustomerPayments = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?");
 function customerBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM sales WHERE customer_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='customer' AND party_id = ?").get(id).amt;
+  const s = stmtCustomerSalesDue.get(id).due;
+  const p = stmtCustomerPayments.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
+
+const stmtSupplierPurchasesDue = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?');
+const stmtSupplierPayments = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?");
 function supplierBalance(id) {
-  const s = db.prepare('SELECT COALESCE(SUM(total - paid),0) AS due FROM purchases WHERE supplier_id = ?').get(id).due;
-  const p = db.prepare("SELECT COALESCE(SUM(amount),0) AS amt FROM payments WHERE party_type='supplier' AND party_id = ?").get(id).amt;
+  const s = stmtSupplierPurchasesDue.get(id).due;
+  const p = stmtSupplierPayments.get(id).amt;
   return Math.round((s - p) * 100) / 100;
 }
 
-function accountBalance(acctId) {
-  const acct = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?').get(acctId);
-  if (!acct) return 0;
-  const openBal = acct.opening_balance;
-
-  const inflow = db.prepare(`
+const stmtAccountOpeningBal = db.prepare('SELECT opening_balance FROM accounts WHERE id = ?');
+const stmtAccountInflow = db.prepare(`
     SELECT COALESCE(SUM(amount),0) AS total
     FROM account_transactions
     WHERE account_id = ? AND type IN ('deposit', 'transfer_in', 'sale_collection')
-  `).get(acctId).total;
-
-  const outflow = db.prepare(`
+  `);
+const stmtAccountOutflow = db.prepare(`
     SELECT COALESCE(SUM(amount),0) AS total
     FROM account_transactions
     WHERE account_id = ? AND type IN ('withdrawal', 'transfer_out', 'purchase_payment', 'expense')
-  `).get(acctId).total;
-
-  const pymtCust = db.prepare(`
+  `);
+const stmtAccountPymtCust = db.prepare(`
     SELECT COALESCE(SUM(amount),0) AS total
     FROM account_transactions
     WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
       AND ref_id IN (SELECT id FROM payments WHERE party_type = 'customer')
-  `).get(acctId).total;
-
-  const pymtSupp = db.prepare(`
+  `);
+const stmtAccountPymtSupp = db.prepare(`
     SELECT COALESCE(SUM(amount),0) AS total
     FROM account_transactions
     WHERE account_id = ? AND type = 'due_payment' AND ref_type = 'payment'
       AND ref_id IN (SELECT id FROM payments WHERE party_type = 'supplier')
-  `).get(acctId).total;
+  `);
+
+function accountBalance(acctId) {
+  const acct = stmtAccountOpeningBal.get(acctId);
+  if (!acct) return 0;
+  const openBal = acct.opening_balance;
+
+  const inflow = stmtAccountInflow.get(acctId).total;
+  const outflow = stmtAccountOutflow.get(acctId).total;
+  const pymtCust = stmtAccountPymtCust.get(acctId).total;
+  const pymtSupp = stmtAccountPymtSupp.get(acctId).total;
 
   const net = openBal + inflow + pymtCust - outflow - pymtSupp;
   return Math.round(net * 100) / 100;
