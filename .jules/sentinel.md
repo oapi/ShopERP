@@ -1,0 +1,4 @@
+## 2026-11-08 - Fix path traversal vulnerability in static file serving
+**Vulnerability:** The static file serving endpoint allowed path traversal by navigating outside the intended public directory. This was possible due to URL decoding happening *after* Node.js `new URL()` parsing and checking bounds with `filePath.startsWith(PUBLIC_DIR)` which is vulnerable to prefix-matching bypass and directory traversal using URL-encoded sequences like `%2e%2e%2f` (../).
+**Learning:** Always use robust path resolution (like `path.relative`) and verify that the resolved path does not start with `..` or is an absolute path. Prefix matching with `startsWith` without a trailing slash is unsafe.
+**Prevention:** Use `path.relative(PUBLIC_DIR, filePath)` and ensure it does not start with `..` and is not absolute. Additionally, return a generic 404 to avoid leaking path existence.
