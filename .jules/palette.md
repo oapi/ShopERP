@@ -1,0 +1,3 @@
+## 2024-11-11 - Add ARIA labels and titles to dynamic icon-only buttons
+**Learning:** In dynamically generated HTML templates, icon-only buttons (like `&times;` for close/remove actions) are often overlooked for accessibility. Without `aria-label`, screen readers cannot announce their purpose. Furthermore, without a `title` attribute, mouse users lack visual context for the button's action.
+**Action:** Always add `aria-label` and `title` attributes to icon-only buttons, especially those injected dynamically via JavaScript template strings. This ensures both screen reader accessibility and improved usability for all users.
