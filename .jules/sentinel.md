@@ -1,0 +1,4 @@
+## 2024-05-18 - Fix prefix-matching path traversal in static file server
+**Vulnerability:** The static file server validation `filePath.startsWith(PUBLIC_DIR)` without a trailing slash allowed prefix-matching path traversal, enabling access to sibling files or directories (e.g. `public_secret` via `../public_secret` or `%2e%2e%2fpublic_secret`).
+**Learning:** Node.js `new URL()` does not decode `%2f` (slash) as a directory separator. Decoding after URL parsing allows path traversal sequences to evade initial URL parsing and prefix-matching validation. Also, `startsWith` is insufficient for path boundary validation.
+**Prevention:** Use `path.relative(PUBLIC_DIR, filePath)` and ensure the result does not start with `..` and is not absolute. Additionally, return a generic 404 to prevent path existence leakage.
